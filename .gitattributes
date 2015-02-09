@@ -1,0 +1,52 @@
+* text=auto
+
+# borrowed from http://aspnetwebstack.codeplex.com
+*.doc  diff=astextplain
+*.DOC  diff=astextplain
+*.docx diff=astextplain
+*.DOCX diff=astextplain
+*.dot  diff=astextplain
+*.DOT  diff=astextplain
+*.pdf  diff=astextplain
+*.PDF  diff=astextplain
+*.rtf  diff=astextplain
+*.RTF  diff=astextplain
+
+*.bmp binary
+*.gif binary
+*.jpg binary
+*.png binary
+*.dll binary
+*.pdb binary
+*.sdf binary
+*.vsix binary
+*.bak binary
+*.zip binary
+
+*.ascx text
+*.cmd text
+*.coffee text
+*.config text
+*.cs text diff=csharp 
+*.csproj text
+*.css text
+*.cshtml text
+*.dbproj text
+*.fsproj text
+*.htm text
+*.html text
+*.js text
+*.msbuild text
+*.resx text
+*.ruleset text
+*.Stylecop text
+*.targets text
+*.tt text
+*.txt text
+*.vb text
+*.vbhtml text
+*.vbproj text
+*.xml text
+*.xunit text
+
+*.sln text eol=crlf
