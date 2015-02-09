@@ -1,0 +1,69 @@
+<h1>PDemo</h1>
+
+<p><em><a href="http://www.hl7.org/implement/standards/fhir/">FHIR</a>-based Patients' DEMOgraphics</em></p>
+
+<p>Simple HTML+JavaScript single page application that query patients' demographics information from a FHIR server.</p>
+
+<p>It is a consumer implementation of the <a href="http://www.ihe.net/uploadedFiles/Documents/ITI/IHE_ITI_Suppl_PDQm_Rev1.0_PC_2014-06-06.pdf">IHE PDQm profile</a>.</p>
+
+<h2>Basic usage  - no authentication</h2>
+
+<p>To start PDemo navigate with your browser to <code>PDemo.html?fhirServiceUrl=xxxxx</code>, where xxxx is the URL of the FHIR server to use. For example:</p>
+
+<p><code>https://demo.careevolution.com/PDemo/PDemo.html?fhirServiceUrl=https://fhir-open-api.smartplatforms.org</code></p>
+
+<p>starts PDemo connecting to the <a href="http://docs.smartplatforms.org/">SMART on FHIR</a> demo anonymous server, and:</p>
+
+<p><code>https://demo.careevolution.com/PDemo/PDemo.html?fhirServiceUrl=http://spark.furore.com/fhir</code></p>
+
+<p>starts PDemo connecting to the <a href="http://spark.furore.com/">Furore</a> demo server. </p>
+
+<p>When starting in this way the app does not use authentication, and so the FHIR server must accept anonymous (non authenticated) requests.</p>
+
+<p>If <code>PDemo.html</code> is served using HTTPS and the FHIR server uses non-secure HTTP (as in the second example above) the browser will complain about 'mixed content' or 'unauthenticated sources' and it will be necessary to confirm that that is OK for the app to work:</p>
+
+<p><img src="Documentation/Chrome_unauthorized.png" alt="Unauthenticated sources in Chrome" /></p>
+
+<p>In general <code>PDemo.html</code> will be hosted on a server different from the FHIR one, hence the FHIR server must support <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>.</p>
+
+<h2>Using SMART authentication</h2>
+
+<p><a href="http://docs.smartplatforms.org/">SMART on FHIR</a> is an extension of the FHIR API that defines an authentication protocol based on <a href="http://oauth.net/2/">OAuth2</a>.</p>
+
+<p>To use SMART authentication specify the URL of the FHIR server using <code>iss</code> instead than <code>fhirServiceUrl</code>. For example:</p>
+
+<p><code>https://demo.careevolution.com/PDemo/PDemo.html?iss=https://fhir-api.smartplatforms.org</code></p>
+
+<p>starts PDemo connecting to the <a href="http://docs.smartplatforms.org/">SMART on FHIR</a> demo authenticated server. </p>
+
+<p>When using the <code>iss</code> parameter PDemo follows the <a href="http://docs.smartplatforms.org/authorization/public/">SMART authorization sequence</a>, redirecting the browser to the login page associated with the FHIR server:</p>
+
+<p><img src="Documentation/SMART_login.png" alt="SMART login" /></p>
+
+<p>Once the user logs in and authorizes the app the browser redirects back to PDemo, that uses the user credentials to access the FHIR server.</p>
+
+<p>PDemo is registered with the <a href="https://authorize.smartplatforms.org/">authorization server</a> used by the SMART demo server. The registration includes the list of authorized startup URLs, so PDemo can be run only as <code>https://demo.careevolution.com/PDemo/PDemo.html</code> when accessing the SMART demo server. To run PDemo from another server it is necessary to create a new registration - and change its client ID to match the new registration. The client ID is in <code>PDemoConfiguration.js</code></p>
+
+<h2>Using login authentication</h2>
+
+<p>PDemo can login directly to a FHIR server that supports <a href="http://tools.ietf.org/html/rfc6749#section-4.3">OAuth2 password credentials grant</a>.</p>
+
+<p>To use login authentication specify the URL of the FHIR server as in the 'no authentication case' and specify the OAuth2 password credential grant URL using the <code>tokenUrl</code> parameter:</p>
+
+<p><code>https://demo.careevolution.com/PDemo/PDemo.html?fhirServiceUrl=https://careev13:8080/fhir&amp;tokenUrl=https://careev13:8080/OAuth2/Token</code></p>
+
+<p>PDemo displays an additional login form in the top right corner:</p>
+
+<p><img src="Documentation/PDemo_login.png" alt="PDemo login" /></p>
+
+<p>Entering user name and password and cliking on 'Sign in' sends the password credential grant request to the token URL (<code>https://careev13:8080/OAuth2/Token</code> in the example), if successful then PDemo uses those user credentials to access the FHIR server:</p>
+
+<p><img src="Documentation/PDemo_logged_in.png" alt="PDemo logged-in" /></p>
+
+<h2>Dependencies</h2>
+
+<p>PDemo uses jQuery, AngularJS and Bootstrap - all loaded from CDN locations, so a working Internet connection is needed - even if the app and the FHIR server are local.</p>
+
+<h2>Browsers compatibility</h2>
+
+<p>Tested (mostly) with IE 11 and Chrome. It should work on any modern browser.</p>

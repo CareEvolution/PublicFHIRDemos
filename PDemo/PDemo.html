@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+
+<!--
+ * Copyright (c) 2015, CareEvolution Inc (info@careevolution.com)
+ *
+ * This file is licensed under the MIT License - see License.txt
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+	<title>PDemo</title>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.28/angular.js"></script>
+
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+	<script src="Scripts/PDemoConfiguration.js"></script>
+	<script src="Scripts/PDemo.js"></script>
+
+	<link rel="stylesheet" href="PDemo.css" />
+</head>
+<body ng-app="PDemoApp" ng-controller="PDemoController">
+
+	<div class="alert alert-danger" role="alert" ng-show="StartupErrorMessage">
+		{{ StartupErrorMessage }}
+	</div>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#avba">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="http://careevolution.com" target="_blank" title="Patient Demographics - Copyright © 2015 CareEvolution Inc.">PDemo</a>
+			</div>
+			<div id="navbar" class="navbar-collapse collapse">
+				<form name="loginForm" class="navbar-form navbar-right" role="form" ng-show="requireLogin()">
+					<div class="form-group">
+						<input type="text" placeholder="User name" class="form-control" ng-model="UserName">
+					</div>
+					<div class="form-group">
+						<input type="password" placeholder="Password" class="form-control" ng-model="Password">
+					</div>
+					<button type="submit" class="btn btn-success" ng-click="login()" ng-disabled="LoggingIn">Sign in</button>
+				</form>
+				<div class="navbar-alert-right alert alert-warning" role="alert" ng-show="LoginErrorMessage">
+					<button type="button" class="close" ng-click="dismissLoginErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					{{ LoginErrorMessage }}
+				</div>
+				<div class="navbar-right" ng-show="UserName && !requireLogin()">
+					<p class="navbar-text">{{ UserName }}</p>
+					<button class="btn btn-success navbar-btn" ng-click="logout()">Sign out</button>
+				</div>
+			</div><!--/.navbar-collapse -->
+		</div>
+	</nav>
+
+	<div class="container-fluid full-height">
+
+		<div class="row full-height" ng-hide="EditableConfiguration">
+
+			<div class="search col-md-3">
+
+				<form name="searchForm" role="form">
+
+					<!-- See http://ihe.net/uploadedFiles/Documents/ITI/IHE_ITI_Suppl_PDQm.pdf - M.4.2 Patient Demographics Query Parameters -->
+
+					<div class="form-group" ng-show="searchFieldEnabled('identifier')">
+						<label for="identifier">{{ searchFieldLabel('identifier') }}</label>
+						<select id="identifierSystem" class="form-control"
+								ng-model="IdentifierSystem"
+								ng-options="system.uri as system.name for system in searchIdentifierSystems()"></select>
+						<input id="identifier" name="identifier" type="text" class="form-control" ng-model="Identifier" />
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('name')">
+						<label for="name">{{ searchFieldLabel('name') }}</label>
+						<input id="name" name="name" type="text" class="form-control" ng-model="Name" />
+						<div>
+							<input type="checkbox" ng-model="NameExact" />
+							Exact
+						</div>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('family')">
+						<label for="lastName">{{ searchFieldLabel('family') }}</label>
+						<input id="lastName" name="lastName" type="text" class="form-control" ng-model="Family" />
+						<div>
+							<input type="checkbox" ng-model="FamilyExact" />
+							Exact
+						</div>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('given')">
+						<label for="firstName">{{ searchFieldLabel('given') }}</label>
+						<input id="firstName" name="firstName" type="text" class="form-control" ng-model="Given">
+						<div>
+							<input type="checkbox" ng-model="GivenExact">
+							Exact
+						</div>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('birthdate')">
+						<label for="birthDate">{{ searchFieldLabel('birthdate') }}</label>
+						<input id="birthDate" name="birthDate" type="text" class="form-control" ng-model="BirthDate">
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('address')">
+						<label for="address">{{ searchFieldLabel('address') }}</label>
+						<input id="address" name="address" type="text" class="form-control" ng-model="Address">
+						<div>
+							<input type="checkbox" ng-model="AddressExact">
+							Exact
+						</div>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('gender')">
+						<label for="gender">{{ searchFieldLabel('gender') }}</label>
+						<select id="gender" class="form-control"
+								ng-model="Gender"
+								ng-options="value.code as value.name for value in genderValues()">
+							<option value="">&lt;Any&gt;</option>
+						</select>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('telecom')">
+						<label for="telecom">{{ searchFieldLabel('telecom') }}</label>
+						<input id="telecom" name="telecom" type="text" class="form-control" ng-model="Telecom">
+						<div>
+							<input type="checkbox" ng-model="TelecomExact">
+							Exact
+						</div>
+					</div>
+
+					<div class="form-group">
+						<label for="sort">Sort by:</label>
+						<select id="sort" class="form-control"
+								ng-model="Sort"
+								ng-options="sort.directive as sort.name for sort in Sorts">
+							<option value="">&lt;None&gt;</option>
+						</select>
+					</div>
+
+					<button type="submit" class="btn btn-success" ng-click="search()" ng-disabled="searchDisabled()">Search</button>
+					<button class="btn btn-default" ng-click="configure()">Configure</button>
+
+				</form>
+
+				<div class="logo">
+					<a href="http://careevolution.com" target="_blank">
+						<img src="Images/CareEv-logo-small.png" title="Patient Demographics - Copyright © 2015 CareEvolution Inc." />
+					</a>
+				</div>
+
+			</div>
+
+			<div class="results col-md-4">
+				<div class="result" ng-repeat="patient in Patients" ng-click="select(patient)" ng-class="{'result-selected': SelectedPatient && (patient===SelectedPatient || patient.selfLink===SelectedPatient.selfLink)}">
+					<div class="result-header">
+						{{ patient.resultHeader }}
+					</div>
+					<div class="result-body">
+						<ul class="list-unstyled">
+							<li ng-repeat="line in patient.resultLines">{{ line }}</li>
+						</ul>
+					</div>
+				</div>
+				<div class="results-footer">
+					<div class="alert alert-warning" role="alert" ng-show="SearchErrorMessage">
+						<button type="button" class="close" ng-click="dismissSearchErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						{{ SearchErrorMessage }}
+					</div>
+					<button class="btn btn-success" ng-click="searchNext()" ng-show="NextPatientsSearchUrl" ng-disabled="searchDisabled()">More</button>
+					<div ng-show="Searching">
+						<img src="Images/CircularProgressAnimation.gif" width="32" />
+						Searching...
+					</div>
+					<div ng-show="!SearchErrorMessage">
+						{{ getPatientsCountDescription() }}
+					</div>
+				</div>
+			</div>
+
+			<div class="details col-md-5">
+				<div class="details-header" ng-show="SelectedPatient">
+					{{ SelectedPatient.detailsHeader }}
+				</div>
+				<div class="details-body" ng-show="SelectedPatient">
+					<div class="details-part" ng-repeat="part in SelectedPatient.detailsParts">
+						<span class="details-part-data" ng-if="!part.parts">{{part}}</span>
+						<div class="details-subpart" ng-if="part.parts">
+							<div class="details-subpart-header">{{ part.header }}</div>
+							<div class="details-part" ng-repeat="subPart in part.parts">
+								<span class="details-part-data">{{ subPart }}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="details-empty" ng-show="!SelectedPatient">
+					No patient selected
+				</div>
+			</div>
+		</div>
+
+		<div class="row full-height" ng-show="EditableConfiguration">
+
+			<form name="configurationForm" class="configuration">
+				<h1>Configuration</h1>
+				<fieldset>
+					<legend>Search fields</legend>
+					<div class="checkbox" ng-repeat="searchField in SearchFields">
+						<label>
+							<input type="checkbox" ng-model="EditableConfiguration.searchFields[searchField.field]" />
+							{{ searchField.label }}
+						</label>
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Identifiers</legend>
+					<div class="form-group">
+						<table>
+							<thead>
+								<tr>
+									<th class="width-uri">URI</th>
+									<th class="width-name">Display</th>
+									<th class="width-icon"></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="system in EditableConfiguration.searchIdentifierSystems" ng-form="identifierSystem">
+									<td class="width-uri" ng-class="{'has-error': identifierSystem.uri.$invalid}">
+										<input type="text" name="uri" class="form-control" ng-model="system.uri" required />
+										<span class="help-block" ng-show="identifierSystem.uri.$invalid">Required.</span>
+									</td>
+									<td class="width-name" ng-class="{'has-error': identifierSystem.name.$invalid}">
+										<input type="text" name="name" class="form-control" ng-model="system.name" required />
+										<span class="help-block" ng-show="identifierSystem.name.$invalid">Required.</span>
+									</td>
+									<td class ="width-icon">
+										<button type="button" class="btn btn-default" title="Remove identifier" ng-click="configureRemoveIdentifierSystem(system)">
+											<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<button type="button" class="btn btn-default" title="Add identifier" ng-click="configureAddIdentifierSystem()">
+							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+						</button>
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Gender</legend>
+					<div class="form-group">
+						<table>
+							<thead>
+								<tr>
+									<th class="width-name">Value</th>
+									<th class="width-name">Display</th>
+									<th class="width-icon"></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="value in EditableConfiguration.genderValueSet.values" ng-form="genderValue">
+									<td class="width-name" ng-class="{'has-error': genderValue.code.$invalid}">
+										<input type="text" name="code" class="form-control" ng-model="value.code" required />
+										<span class="help-block" ng-show="genderValue.code.$invalid">Required.</span>
+									</td>
+									<td class="width-name" ng-class="{'has-error': genderValue.name.$invalid}">
+										<input type="text" name="name" class="form-control" ng-model="value.name" required />
+										<span class="help-block" ng-show="genderValue.name.$invalid">Required.</span>
+									</td>
+									<td class="width-icon">
+										<button type="button" class="btn btn-default" title="Remove value" ng-click="configureRemoveGenderValue(value)">
+											<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+										</button>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<button type="button" class="btn btn-default" title="Add value" ng-click="configureAddGenderValue()">
+							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+						</button>
+					</div>
+					<div class="form-group">
+						<label for="genderSystemUri">System URI (optional:</label>
+						<input id="genderSystemUri" type="text" class="form-control width-uri" ng-model="EditableConfiguration.genderValueSet.uri">
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Results</legend>
+					<div class="form-group" ng-class="{'has-error': configurationForm.resultsPerPage.$invalid}" >
+						<label for="resultsPerPage">Results per page:</label>
+						<input id="resultsPerPage" name="resultsPerPage" 
+							type="number" min="1" max="100" required 
+							aria-describedby="resultsPerPageHelp" 
+							class="form-control width-name" 
+							ng-model="EditableConfiguration.resultsPerPage">
+						<span id="resultsPerPageHelp" class="help-block" ng-show="configurationForm.resultsPerPage.$invalid">Must be a number between 1 and 100.</span>
+					</div>
+				</fieldset>
+				<fieldset>
+					<legend>Testing</legend>
+					<label>
+						<input type="checkbox" ng-model="EditableConfiguration.getDetails" />
+						When selecting a patient, get the details from the FHIR server instead than using the data returned by the search
+					</label>
+				</fieldset>
+				<button type="submit" class="btn btn-success" ng-click="configureOK()" ng-disabled="configurationForm.$invalid">OK</button>
+				<button class="btn btn-default" ng-click="configureCancel()">Cancel</button>
+			</form>
+
+			<div class="logo">
+				<a href="http://careevolution.com" target="_blank">
+					<img src="Images/CareEv-logo-small.png" title="Patient Demographics - Copyright © 2015 CareEvolution Inc." />
+				</a>
+			</div>
+
+		</div>
+	</div>
+
+</body>
+</html>
