@@ -158,9 +158,9 @@
 						var extensions = data.rest[0].security.extension;
 						for (var i = 0; i < extensions.length; i++) {
 							var extension = extensions[i];
-							if (extension.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#authorize") {
+							if (extension.url === "http://fhir-registry.smarthealthit.org/Profile/oauth-uris#authorize") {
 								authorizeUrl = extension.valueUri;
-							} else if (extension.url === "http://fhir-registry.smartplatforms.org/Profile/oauth-uris#token") {
+							} else if (extension.url === "http://fhir-registry.smarthealthit.org/Profile/oauth-uris#token") {
 								tokenUrl = extension.valueUri;
 							}
 						}
@@ -172,7 +172,7 @@
 						redirectParameters = appendParameter(redirectParameters, "response_type", "code");
 						redirectParameters = appendParameter(redirectParameters, "client_id", PDemoConfiguration.clientID);
 						redirectParameters = appendParameter(redirectParameters, "redirect_uri", getRedirectUrl());
-						redirectParameters = appendParameter(redirectParameters, "scope", "user/*.*");
+						redirectParameters = appendParameter(redirectParameters, "scope", "user/*.read");
 						mode = MODE_CODE;
 						sessionStorage[SESSION_FHIR_URL] = fhirUrl;
 						sessionStorage[SESSION_MODE] = mode;

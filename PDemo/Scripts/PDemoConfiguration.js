@@ -5,12 +5,8 @@
  */
 
 var PDemoConfiguration = {
-	// OAuth2 authorization server endpoint (http://tools.ietf.org/html/rfc6749#section-4.3.2)
-	// Set it to null to disable authorization and use FHIR in anonymous mode
-	oauth2Url: null, // "https://careev13:8080/OAuth2/Token",
-
 	// Client identifier used by the OAuth2 protocol - it must be accepted by the OAuth2 authorization server
-	clientID: "a8076d0c-d6cc-4bfc-bdf9-3115bb469ace",
+	clientID: "d20b230b-a4f5-46af-a6d3-d6a0b802b34e",
 
 	// Possible sorts
 	sorts: [
