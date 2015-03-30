@@ -196,6 +196,10 @@
 			return window.location.href.substring(0, window.location.href.length - window.location.search.length)
 		}
 
+		$scope.getFhirUrl = function () {
+			return sessionStorage[SESSION_FHIR_URL];
+		};
+
 		$scope.requireLogin = function () {
 			return mode === MODE_LOGIN && !authorizationToken;
 		};

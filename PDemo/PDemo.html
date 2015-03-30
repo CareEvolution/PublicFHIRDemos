@@ -62,6 +62,9 @@
 					<p class="navbar-text">{{ UserName }}</p>
 					<button class="btn btn-success navbar-btn" ng-click="logout()">Sign out</button>
 				</div>
+				<div class="navbar-right" ng-show="getFhirUrl()">
+					<p class="navbar-text">Connected to: {{ getFhirUrl() }}</p>
+				</div>
 			</div><!--/.navbar-collapse -->
 		</div>
 	</nav>
@@ -247,7 +250,7 @@
 										<input type="text" name="name" class="form-control" ng-model="system.name" required />
 										<span class="help-block" ng-show="identifierSystem.name.$invalid">Required.</span>
 									</td>
-									<td class ="width-icon">
+									<td class="width-icon">
 										<button type="button" class="btn btn-default" title="Remove identifier" ng-click="configureRemoveIdentifierSystem(system)">
 											<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
 										</button>
@@ -300,13 +303,13 @@
 				</fieldset>
 				<fieldset>
 					<legend>Results</legend>
-					<div class="form-group" ng-class="{'has-error': configurationForm.resultsPerPage.$invalid}" >
+					<div class="form-group" ng-class="{'has-error': configurationForm.resultsPerPage.$invalid}">
 						<label for="resultsPerPage">Results per page:</label>
-						<input id="resultsPerPage" name="resultsPerPage" 
-							type="number" min="1" max="100" required 
-							aria-describedby="resultsPerPageHelp" 
-							class="form-control width-name" 
-							ng-model="EditableConfiguration.resultsPerPage">
+						<input id="resultsPerPage" name="resultsPerPage"
+							   type="number" min="1" max="100" required
+							   aria-describedby="resultsPerPageHelp"
+							   class="form-control width-name"
+							   ng-model="EditableConfiguration.resultsPerPage">
 						<span id="resultsPerPageHelp" class="help-block" ng-show="configurationForm.resultsPerPage.$invalid">Must be a number between 1 and 100.</span>
 					</div>
 				</fieldset>
