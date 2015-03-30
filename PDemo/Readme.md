@@ -60,6 +60,19 @@ Entering user name and password and cliking on 'Sign in' sends the password cred
 
 ![PDemo logged-in](Documentation/PDemo_logged_in.png)
 
+## Configuration
+
+Various search and display options are configurable. This configuration is accessible using the 'Configure' button at the botton of the search form:
+
+![PDemo configuration](Documentation/PDemo_configuration.png)
+
+The current configuration is stored in the browser local storage, so it is preserved between session.
+
+To reset the configuration to its default initial value add a `resetConfiguration` parameter to PDemo URL:
+
+`https://demo.careevolution.com/PDemo/PDemo.html?resetConfiguration=`
+
+
 ## Dependencies
 
 PDemo uses jQuery, AngularJS and Bootstrap - all loaded from CDN locations, so a working Internet connection is needed - even if the app and the FHIR server are local.
