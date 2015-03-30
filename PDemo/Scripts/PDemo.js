@@ -721,8 +721,8 @@
 							parts: patient.identifier.map(function (identifier) {
 								// See http://www.hl7.org/implement/standards/fhir/datatypes.html#identifier
 								return joinNonEmpty(" ", [
+									addPrefixSuffixNonEmpty("", identifier.label || getIdentifierSystemDisplayName(identifier.system, knownIdentifierSystems), ":"),
 									identifier.value,
-									addPrefixSuffixNonEmpty("[", getIdentifierSystemDisplayName(identifier.system, knownIdentifierSystems), "]"),
 									addPrefixSuffixNonEmpty("[", identifier.use, "]"),
 								]);
 							}),
@@ -739,7 +739,7 @@
 			if (knownName === "") {
 				return knownName;
 			}
-			return knownName || identifierSystem;
+			return knownName || ( "[" + identifierSystem + "]" );
 		}
 
 		function computeKnownIdentifierSystems() {
