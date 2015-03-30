@@ -43,7 +43,7 @@ var PDemoConfiguration = {
 	],
 
 	defaultGenderValueSet: {
-		uri: "urn:oid:2.16.840.1.113883.1.11.1",
+		uri: null,
 		values: [
 			{ code: "F", name: "Female" },
 			{ code: "M", name: "Male" },
