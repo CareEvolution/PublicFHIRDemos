@@ -64,7 +64,7 @@ Entering user name and password and cliking on 'Sign in' sends the password cred
 
 Various search and display options are configurable. This configuration is accessible using the 'Configure' button at the botton of the search form:
 
-![PDemo configuration](Documentation/PDemo_configuration.png)
+![PDemo configuration](Documentation/PDemo_configuration.PNG)
 
 The current configuration is stored in the browser local storage, so it is preserved between session.
 
