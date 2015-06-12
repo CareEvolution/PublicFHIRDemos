@@ -203,10 +203,14 @@
 					<div class="details-part" ng-repeat="part in SelectedPatient.detailsParts">
 						<span class="details-part-data" ng-if="!part.parts">{{part}}</span>
 						<div class="details-subpart" ng-if="part.parts">
-							<div class="details-subpart-header">{{ part.header }}</div>
-                            <div class="details-part" ng-repeat="subPart in part.parts track by $index">
-                                <span class="details-part-data">{{ subPart }}</span>
-                            </div>
+							<div class="details-subpart-header" ng-click="toggleCollapse(part)">
+								<i class="icon-plus"></i>
+								<i class="icon-minus"></i>
+								{{ part.header }}
+							</div>
+							<div class="details-part" ng-if="!part.collapsed" ng-repeat="subPart in part.parts track by $index">
+								<span class="details-part-data">{{ subPart }}</span>
+							</div>
 						</div>
 					</div>
 				</div>

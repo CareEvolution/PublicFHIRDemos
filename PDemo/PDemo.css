@@ -134,12 +134,13 @@ body
 {
 	font-weight: bold;
 	margin-top: 0.3em;
+	cursor: pointer;
 }
 
-.details-subpart .details-part
-{
-	margin-left: 1em;
-}
+	.details-subpart .details-part
+	{
+		margin-left: 1em;
+	}
 
 .configuration
 {

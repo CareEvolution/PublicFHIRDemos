@@ -473,6 +473,18 @@
             }
         };
 
+		$scope.toggleCollapse = function (part) {
+			if (!(part.load && part.collapsed)) {
+				part.collapsed = !part.collapsed;
+			} else {
+				part.load(function (parts) {
+					part.parts = parts;
+					part.load = null;
+					part.collapsed = false;
+				})
+			}
+		};
+
         /**
         {"resourceType":"Bundle","title":"Encounter search","id":"urn:uuid:91668def-9570-4b9c-90b3-dde8ff6d964e",
         "updated":"2015-06-12T02:15:47.7554648+00:00","author":[{"name":"CareEvolution","uri":"http://careevolution.com"}],
@@ -894,8 +906,10 @@
 						        return joinNonEmpty(" ", [
 									composeDisplayName(name),
 									addPrefixSuffixNonEmpty("[", name.use, "]"),
-						        ]);
-						    })
+								]);
+							}),
+							collapsed: false,
+							load: null,
 						},
 					!patient.telecom || patient.telecom.length === 0 ?
 						null :
@@ -906,18 +920,22 @@
 									addPrefixSuffixNonEmpty("", firstUppercase(telecom.system), ":"),
 									telecom.value,
 									addPrefixSuffixNonEmpty("[", telecom.use, "]"),
-						        ]);
-						    }),
+								]);
+							}),
+							collapsed: false,
+							load: null,
 						},
 					!patient.address || patient.address.length === 0 ?
 						null :
                         patient.address.constructor != Array ?
                         composeDisplayAddressLines(patient.address) :
 						patient.address.map(function (address) {
-						    return {
-						        header: joinNonEmpty(" - ", ["Address", address.use]),
-						        parts: composeDisplayAddressLines(address),
-						    };
+							return {
+								header: joinNonEmpty(" - ",["Address",address.use]),
+								parts: composeDisplayAddressLines(address),
+								collapsed: false,
+								load: null,
+							};
 						}),
 					!patient.identifier || patient.identifier.length === 0 ?
 						null :
@@ -929,8 +947,10 @@
 									addPrefixSuffixNonEmpty("", identifier.label || getIdentifierSystemDisplayName(identifier.system, knownIdentifierSystems), ":"),
 									identifier.value,
 									addPrefixSuffixNonEmpty("[", identifier.use, "]"),
-						        ]);
-						    }),
+								]);
+							}),
+							collapsed: false,
+							load: null,
 						},
                 ]),
             };
