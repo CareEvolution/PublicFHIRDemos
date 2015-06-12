@@ -506,7 +506,16 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (encounter) {
-                    return "Admitted on " + parseDateTime(encounter.content.period.start).toLocaleDateString();
+                    if (encounter.content.period) {
+                        var part = "Admitted on " + parseDateTime(encounter.content.period.start).toLocaleDateString();
+                        if (encounter.content.period.end) {
+                            part += " and discharged on " + parseDateTime(encounter.content.period.end).toLocaleDateString();
+                        }
+                        return part;
+                    } else {
+                        return "Encounter - Unknown dates.";
+                    }
+
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
