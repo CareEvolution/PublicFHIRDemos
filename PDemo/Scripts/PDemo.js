@@ -456,6 +456,14 @@
         $scope.select = function (patient) {
             if (!getConfiguration().getDetails || $scope.searchDisabled()) {
                 $scope.SelectedPatient = patient;
+                if (!patient.hasClinicalData) {
+                    getEncounters(patient);
+                    getConditions(patient);
+                    getProcedures(patient);
+                    getImmunizations(patient);
+                    getMedicationPrescriptions(patient);
+                    getReports(patient);
+                }
             } else {
                 var patientLink = patient.selfLink;
                 doGetPatient(patientLink, function (patient) {
@@ -463,6 +471,197 @@
                     $scope.SelectedPatient = patient;
                 });
             }
+        };
+
+        /**
+        {"resourceType":"Bundle","title":"Encounter search","id":"urn:uuid:91668def-9570-4b9c-90b3-dde8ff6d964e",
+        "updated":"2015-06-12T02:15:47.7554648+00:00","author":[{"name":"CareEvolution","uri":"http://careevolution.com"}],
+        "totalResults":"2","link":[{"rel":"fhir-base","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir"},
+        {"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Encounter?_query=847c51ce-681f-40ae-969c-d2e93924f1b2&_start=1"}],
+        "entry":[{"title":"Encounter with id d0db1dc3-6a10-e511-8293-0050b664cec5",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Encounter/d0db1dc3-6a10-e511-8293-0050b664cec5",
+        "updated":"2015-06-11T18:50:44.64+00:00","link":[{"rel":
+        "self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Encounter/d0db1dc3-6a10-e511-8293-0050b664cec5"}],
+        "content":{"resourceType":"Encounter","id":"d0db1dc3-6a10-e511-8293-0050b664cec5",
+        "identifier":[{"use":"official","value":"DefaultNameSpaceCode_3/20/201"}],
+        "class":"outpatient","subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},
+        "period":{"start":"2014-03-20T00:00:00-04:00"},"location":[{"location":{"reference":"Location/cedb1dc3-6a10-e511-8293-0050b664cec5"},
+        "period":{"start":"2014-03-20T00:00:00-04:00"}}]}},
+        {"title":"'Admitted on 3/20/2014 12:00:00 AM' encounter from 3/20/2014 12:00:00 AM -04:00 to 
+        ","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Encounter/cfdb1dc3-6a10-e511-8293-0050b664cec5",
+        "updated":"2015-06-11T18:50:44.637+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Encounter/cfdb1dc3-6a10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Encounter","id":"cfdb1dc3-6a10-e511-8293-0050b664cec5","identifier":[{"use":"official","value":"f4d23703-19d5-e311-bead-b8763fa85218"}],"class":"outpatient","subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"period":{"start":"2014-03-20T00:00:00-04:00"}}}]}
+        **/
+        function getEncounters(patient) {
+            var searchUrl = fhirUrl + "/Encounter?subject=" + patient.selfLink.substring(fhirUrl.length, patient.selfLink.length);
+            $http({
+                url: searchUrl,
+                method: "GET",
+                headers: getHeaders(),
+            }).success(function (data) {
+                var parts = data.entry.map(function (encounter) {
+                    return "Admitted on " + parseDateTime(encounter.content.period.start).toLocaleDateString();
+                });
+                patient.detailsParts.push({ header: "Encounters", parts: parts });
+            }).error(function (data, status) {
+                handleHttpError("GetEncounters", data, status);
+            });
+            patient.hasClinicalData = true;
+        };
+
+        function getConditions(patient) {
+            var searchUrl = fhirUrl + "/Condition?subject=" + patient.selfLink.substring(fhirUrl.length, patient.selfLink.length);
+            $http({
+                url: searchUrl,
+                method: "GET",
+                headers: getHeaders(),
+            }).success(function (data) {
+                var parts = data.entry.map(function (condition) {
+                    return condition.content.code.text + " " + parseDateTime(condition.content.dateAsserted).toLocaleDateString();
+                });
+                patient.detailsParts.push({ header: "Conditions", parts: parts });
+            }).error(function (data, status) {
+                handleHttpError("GetConditions", data, status);
+            });
+            patient.hasClinicalData = true;
+        };
+
+        /***
+        {"resourceType":"Bundle","title":"Procedure search","id":"urn:uuid:a3ea3235-d0a3-416e-8c3f-fe303f1c79d0","updated":"2015-06-12T01:20:20.369228+00:00",
+        "author":[{"name":"CareEvolution","uri":"http://careevolution.com"}],
+        "totalResults":"51","link":[{"rel":"fhir-base","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir"},
+        {"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure?_query=f43cce87-e436-4d32-ba1c-1e206f773520&_start=1"},
+        {"rel":"first","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure?_query=f43cce87-e436-4d32-ba1c-1e206f773520&_start=1"},
+        {"rel":"next","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure?_query=f43cce87-e436-4d32-ba1c-1e206f773520&_start=21"}],
+        "entry":[{"title":"Primary Diagnosis on 6/10/2015 12:00:00 AM -04:00",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/72a8a6af-5c10-e511-8293-0050b664cec5",
+        "updated":"2015-06-11T17:10:02.683+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/72a8a6af-5c10-e511-8293-0050b664cec5"}],
+        "content":{"resourceType":"Procedure","id":"72a8a6af-5c10-e511-8293-0050b664cec5",
+        "subject":{"reference":"Patient/61a8a6af-5c10-e511-8293-0050b664cec5"},
+        "type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode",
+        "code":"283","display":"TONSILLECTOMY/ADENOIDEC","primary":true}],"text":"TONSILLECTOMY/ADENOIDEC"},
+        "date":{"start":"2015-06-10T00:00:00-04:00","end":"2015-06-10T00:00:00-04:00"},"encounter":{"reference":"Encounter/65a8a6af-5c10-e511-8293-0050b664cec5"}}},
+        {"title":"Primary Diagnosis on 6/3/2015 12:00:00 AM -04:00",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/74a8a6af-5c10-e511-8293-0050b664cec5",
+        "updated":"2015-06-11T17:10:02.687+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/74a8a6af-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"74a8a6af-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/61a8a6af-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"99244","display":"E/M CONSULT OFFICE CONSULT LEVEL 4","primary":true}],"text":"E/M CONSULT OFFICE CONSULT LEVEL 4"},"date":{"start":"2015-06-03T00:00:00-04:00","end":"2015-06-03T00:00:00-04:00"},"encounter":{"reference":"Encounter/67a8a6af-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 5/7/2015 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/71a8a6af-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:10:02.68+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/71a8a6af-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"71a8a6af-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/61a8a6af-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"99213","display":"E/M OFFICE/OP SERV EST PATIENT LEVEL 3","primary":true}],"text":"E/M OFFICE/OP SERV EST PATIENT LEVEL 3"},"date":{"start":"2015-05-07T00:00:00-04:00","end":"2015-05-07T00:00:00-04:00"},"encounter":{"reference":"Encounter/64a8a6af-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 4/25/2015 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/366346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.71+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/366346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"366346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"24650","display":"TREAT CLOS RAD HEAD/NECK FX W/O MANIPULA","primary":true}],"text":"TREAT CLOS RAD HEAD/NECK FX W/O MANIPULA"},"date":{"start":"2015-04-25T00:00:00-04:00","end":"2015-04-25T00:00:00-04:00"},"encounter":{"reference":"Encounter/cd6246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 4/9/2015 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/70a8a6af-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:10:02.68+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/70a8a6af-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"70a8a6af-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/61a8a6af-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"99213","display":"E/M OFFICE/OP SERV EST PATIENT LEVEL 3","primary":true}],"text":"E/M OFFICE/OP SERV EST PATIENT LEVEL 3"},"date":{"start":"2015-04-09T00:00:00-04:00","end":"2015-04-09T00:00:00-04:00"},"encounter":{"reference":"Encounter/63a8a6af-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 2/22/2015 12:00:00 AM -05:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/73a8a6af-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:10:02.683+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/73a8a6af-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"73a8a6af-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/61a8a6af-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"99212","display":"E/M OFFICE/OP SERV EST PATIENT LEVEL 2","primary":true}],"text":"E/M OFFICE/OP SERV EST PATIENT LEVEL 2"},"date":{"start":"2015-02-22T00:00:00-05:00","end":"2015-02-22T00:00:00-05:00"},"encounter":{"reference":"Encounter/66a8a6af-5c10-e511-8293-0050b664cec5"}}},{"title":"Procedure with id 41dc1dc3-6a10-e511-8293-0050b664cec5","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/41dc1dc3-6a10-e511-8293-0050b664cec5","updated":"2015-06-11T18:50:53.417+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/41dc1dc3-6a10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"41dc1dc3-6a10-e511-8293-0050b664cec5","subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"24650","display":"TREAT CLOS RAD HEAD/NECK FX W/O MANIPULA","primary":true}],"text":"TREAT CLOS RAD HEAD/NECK FX W/O MANIPULA"},"date":{"start":"2014-03-20T00:00:00-04:00","end":"2014-03-20T00:00:00-04:00"},"encounter":{"reference":"Encounter/d0db1dc3-6a10-e511-8293-0050b664cec5"},"notes":"TREAT CLOS RAD HEAD/NECK FX W/O MANIPULA"}},{"title":"Primary Diagnosis on 6/6/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/326346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.703+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/326346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"326346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"T1002","display":"RN SERVICES  UP TO 15 MINUTES","primary":true}],"text":"RN SERVICES  UP TO 15 MINUTES"},"date":{"start":"2013-06-06T00:00:00-04:00","end":"2013-06-06T00:00:00-04:00"},"encounter":{"reference":"Encounter/c96246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 6/2/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/316346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.703+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/316346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"316346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"73080","display":"RADIO EXAM ELBOW COMP MINIMUM THREE VIEW","primary":true}],"text":"RADIO EXAM ELBOW COMP MINIMUM THREE VIEW"},"date":{"start":"2013-06-02T00:00:00-04:00","end":"2013-06-02T00:00:00-04:00"},"encounter":{"reference":"Encounter/c86246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 5/19/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/356346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.71+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/356346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"356346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"73080","display":"RADIO EXAM ELBOW COMP MINIMUM THREE VIEW","primary":true}],"text":"RADIO EXAM ELBOW COMP MINIMUM THREE VIEW"},"date":{"start":"2013-05-19T00:00:00-04:00","end":"2013-05-19T00:00:00-04:00"},"encounter":{"reference":"Encounter/cc6246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 5/13/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/61d5d19f-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:34.42+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/61d5d19f-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"61d5d19f-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/23c87993-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"12345","display":"Aortic Valve Replacement","primary":true}],"text":"Aortic Valve Replacement"},"date":{"start":"2013-05-13T00:00:00-04:00","end":"2013-05-13T00:00:00-04:00"},"encounter":{"reference":"Encounter/31c87993-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 5/8/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/336346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.707+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/336346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"336346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"73080","display":"RADIO EXAM ELBOW COMP MINIMUM THREE VIEW","primary":true}],"text":"RADIO EXAM ELBOW COMP MINIMUM THREE VIEW"},"date":{"start":"2013-05-08T00:00:00-04:00","end":"2013-05-08T00:00:00-04:00"},"encounter":{"reference":"Encounter/ca6246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 2/7/2013 12:00:00 AM -05:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/306346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.7+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/306346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"306346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"92004","display":"OPHTHALMOLOGICAL SVC COMPREHENS NEW PT","primary":true}],"text":"OPHTHALMOLOGICAL SVC COMPREHENS NEW PT"},"date":{"start":"2013-02-07T00:00:00-05:00","end":"2013-02-07T00:00:00-05:00"},"encounter":{"reference":"Encounter/c76246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 8/12/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/62d5d19f-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:34.423+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/62d5d19f-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"62d5d19f-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/23c87993-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"94150","display":"VITAL CAPACITY TOTAL","primary":true}],"text":"VITAL CAPACITY TOTAL"},"date":{"start":"2012-08-12T00:00:00-04:00","end":"2012-08-12T00:00:00-04:00"},"encounter":{"reference":"Encounter/30c87993-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 8/10/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/346346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.71+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/346346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"346346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"94150","display":"VITAL CAPACITY TOTAL","primary":true}],"text":"VITAL CAPACITY TOTAL"},"date":{"start":"2012-08-10T00:00:00-04:00","end":"2012-08-10T00:00:00-04:00"},"encounter":{"reference":"Encounter/cb6246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 7/28/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/2e6346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.697+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/2e6346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"2e6346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"99214","display":"E/M OFFICE/OP SERV EST PATIENT LEVEL 4","primary":true}],"text":"E/M OFFICE/OP SERV EST PATIENT LEVEL 4"},"date":{"start":"2012-07-28T00:00:00-04:00","end":"2012-07-28T00:00:00-04:00"},"encounter":{"reference":"Encounter/c56246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary on 7/15/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/5cd5d19f-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:34.407+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/5cd5d19f-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"5cd5d19f-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/23c87993-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"T1015","display":"CLINIC VISIT/ENCOUNTER","primary":true}],"text":"CLINIC VISIT/ENCOUNTER"},"date":{"start":"2012-07-15T00:00:00-04:00","end":"2012-07-15T00:00:00-04:00"},"encounter":{"reference":"Encounter/2fc87993-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary on 7/13/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/2f6346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.7+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/2f6346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"2f6346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"T1015","display":"CLINIC VISIT/ENCOUNTER","primary":true}],"text":"CLINIC VISIT/ENCOUNTER"},"date":{"start":"2012-07-13T00:00:00-04:00","end":"2012-07-13T00:00:00-04:00"},"encounter":{"reference":"Encounter/c66246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 7/13/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/2d6346a6-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:51.697+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/2d6346a6-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"2d6346a6-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/c36246a6-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"94760","display":"NONINVASIVE EAR PULSE OXIMETRY O2 SAT SI","primary":true}],"text":"NONINVASIVE EAR PULSE OXIMETRY O2 SAT SI"},"date":{"start":"2012-07-13T00:00:00-04:00","end":"2012-07-13T00:00:00-04:00"},"encounter":{"reference":"Encounter/c46246a6-5c10-e511-8293-0050b664cec5"}}},{"title":"Primary Diagnosis on 5/1/2012 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/5fd5d19f-5c10-e511-8293-0050b664cec5","updated":"2015-06-11T17:09:34.413+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Procedure/5fd5d19f-5c10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Procedure","id":"5fd5d19f-5c10-e511-8293-0050b664cec5","subject":{"reference":"Patient/23c87993-5c10-e511-8293-0050b664cec5"},"type":{"coding":[{"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode","code":"T1002","display":"RN SERVICES  UP TO 15 MINUTES","primary":true}],"text":"RN SERVICES  UP TO 15 MINUTES"},"date":{"start":"2012-05-01T00:00:00-04:00","end":"2012-05-01T00:00:00-04:00"},"encounter":{"reference":"Encounter/2ec87993-5c10-e511-8293-0050b664cec5"}}}]}
+        **/
+        function getProcedures(patient) {
+            var searchUrl = fhirUrl + "/Procedure?subject=" + patient.selfLink.substring(fhirUrl.length, patient.selfLink.length);
+            $http({
+                url: searchUrl,
+                method: "GET",
+                headers: getHeaders(),
+            }).success(function (data) {
+                var parts = data.entry.map(function (procedure) {
+                    return procedure.content.type.text + " " + parseDateTime(procedure.content.date.start).toLocaleDateString();
+                });
+                patient.detailsParts.push({ header: "Procedures", parts: parts });
+            }).error(function (data, status) {
+                handleHttpError("getProcedures", data, status);
+            });
+            patient.hasClinicalData = true;
+        };
+
+        /**
+        {"resourceType":"Bundle","title":"Immunization search","id":"urn:uuid:6ddb2929-aa77-4bfc-8112-2645928a32fa",
+        "updated":"2015-06-12T01:40:00.4916463+00:00","author":[{"name":"CareEvolution","uri":"http://careevolution.com"}],
+        "totalResults":"5","link":[{"rel":"fhir-base","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir"},
+        {"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization?_query=23d8effb-5cbb-4509-a077-e435626da390&_start=1"}],
+        "entry":[{"title":"H PAPILLOMA VACC 3 DOSE IM GARDASIL on 7/23/2013 12:00:00 AM -04:00",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e0db1dc3-6a10-e511-8293-0050b664cec5",
+        "updated":"2015-06-11T18:50:48.367+00:00","link":[{"rel":"self",
+        "href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e0db1dc3-6a10-e511-8293-0050b664cec5"}],
+        "content":{"resourceType":"Immunization","id":"e0db1dc3-6a10-e511-8293-0050b664cec5","date":"7/23/2013 12:00:00 AM -04:00","vaccineType":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.59","code":"62","display":"H PAPILLOMA VACC 3 DOSE IM GARDASIL","primary":true}],"text":"H PAPILLOMA VACC 3 DOSE IM GARDASIL"},"subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"refusedIndicator":true,"doseQuantity":{"value":-1.0000000000,"units":"No dosage units provided","system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/MedicationAdministrationDoseUnits","code":"NotProvided"}}},{"title":"TDAP VACCINE >7  BOOSTRIX IM on 7/23/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e1db1dc3-6a10-e511-8293-0050b664cec5","updated":"2015-06-11T18:50:48.377+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e1db1dc3-6a10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Immunization","id":"e1db1dc3-6a10-e511-8293-0050b664cec5","date":"7/23/2013 12:00:00 AM -04:00","vaccineType":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.59","code":"115","display":"TDAP VACCINE >7  BOOSTRIX IM","primary":true}],"text":"TDAP VACCINE >7  BOOSTRIX IM"},"subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"refusedIndicator":true,"doseQuantity":{"value":-1.0000000000,"units":"No dosage units provided","system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/MedicationAdministrationDoseUnits","code":"NotProvided"}}},{"title":"MENINGOCOCCAL VACCINE, SC on 7/23/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e2db1dc3-6a10-e511-8293-0050b664cec5","updated":"2015-06-11T18:50:48.4+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e2db1dc3-6a10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Immunization","id":"e2db1dc3-6a10-e511-8293-0050b664cec5","date":"7/23/2013 12:00:00 AM -04:00","vaccineType":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.59","code":"32","display":"MENINGOCOCCAL VACCINE, SC","primary":true}],"text":"MENINGOCOCCAL VACCINE, SC"},"subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"refusedIndicator":true,"doseQuantity":{"value":-1.0000000000,"units":"No dosage units provided","system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/MedicationAdministrationDoseUnits","code":"NotProvided"}}},{"title":"IMMUNIZATION ADMIN on 7/23/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e3db1dc3-6a10-e511-8293-0050b664cec5","updated":"2015-06-11T18:50:48.423+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e3db1dc3-6a10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Immunization","id":"e3db1dc3-6a10-e511-8293-0050b664cec5","date":"7/23/2013 12:00:00 AM -04:00","vaccineType":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.59","code":"90471","display":"IMMUNIZATION ADMIN","primary":true}],"text":"IMMUNIZATION ADMIN"},"subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"refusedIndicator":true,"doseQuantity":{"value":-1.0000000000,"units":"No dosage units provided","system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/MedicationAdministrationDoseUnits","code":"NotProvided"}}},{"title":"IMMUNIZATION ADMIN, EACH ADD on 7/23/2013 12:00:00 AM -04:00","id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e4db1dc3-6a10-e511-8293-0050b664cec5","updated":"2015-06-11T18:50:48.433+00:00","link":[{"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/Immunization/e4db1dc3-6a10-e511-8293-0050b664cec5"}],"content":{"resourceType":"Immunization","id":"e4db1dc3-6a10-e511-8293-0050b664cec5","date":"7/23/2013 12:00:00 AM -04:00","vaccineType":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.59","code":"90472","display":"IMMUNIZATION ADMIN, EACH ADD","primary":true}],"text":"IMMUNIZATION ADMIN, EACH ADD"},"subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"refusedIndicator":true,"doseQuantity":{"value":-1.0000000000,"units":"No dosage units provided","system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/MedicationAdministrationDoseUnits","code":"NotProvided"}}}]}
+        **/
+        function getImmunizations(patient) {
+            var searchUrl = fhirUrl + "/Immunization?subject=" + patient.selfLink.substring(fhirUrl.length, patient.selfLink.length);
+            $http({
+                url: searchUrl,
+                method: "GET",
+                headers: getHeaders(),
+            }).success(function (data) {
+                var parts = data.entry.map(function (immunization) {
+                    return immunization.content.vaccineType.text + " " + parseDateTime(immunization.content.date).toLocaleDateString();
+                });
+                patient.detailsParts.push({ header: "Immunizations", parts: parts });
+            }).error(function (data, status) {
+                handleHttpError("getImmunizations", data, status);
+            });
+            patient.hasClinicalData = true;
+        };
+
+        /**
+        {"resourceType":"Bundle","title":"MedicationPrescription search","id":"urn:uuid:12b16617-7cf6-4391-abe8-bc36a44123a2",
+        "updated":"2015-06-12T01:46:06.8212122+00:00","author":[{"name":"CareEvolution","uri":"http://careevolution.com"}],
+        "totalResults":"1","link":[{"rel":"fhir-base","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir"},
+        {"rel":"self","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/MedicationPrescription?_query=5487a967-914a-4d64-8f0a-041c4485c0c2&_start=1"}],
+        "entry":[{"title":"Motrin: on 3/26/2014 12:00:00 AM -04:00",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/MedicationPrescription/d3db1dc3-6a10-e511-8293-0050b664cec5",
+        "updated":"2015-06-11T18:50:45+00:00","link":[{"rel":"self",
+        "href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/MedicationPrescription/d3db1dc3-6a10-e511-8293-0050b664cec5"}],
+        "content":{"resourceType":"MedicationPrescription","id":"d3db1dc3-6a10-e511-8293-0050b664cec5",
+        "contained":[{"resourceType":"Medication","id":"18","name":"Motrin:","code":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.88",
+        "code":"197806","display":"Motrin:","primary":true}],"text":"Motrin:"}}],
+        "identifier":[{"use":"usual","label":"Placer Order Number",
+        "system":"http://careevolution.com/identifiers/04aae852-c30d-4781-9eb8-a274592fff86/CareEvolution/MRN",
+        "value":"1368426"}],"dateWritten":"2014-03-26T00:00:00-04:00","status":"completed",
+        "patient":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},
+        "prescriber":{"reference":"Practitioner/c6db1dc3-6a10-e511-8293-0050b664cec5"},
+        "medication":{"reference":"18"},
+        "dosageInstruction":[{"text":"Motrin:  1 tablet by Oral route every 6-8 hours PRN Give one tablet with food Dispense: 60 tab(s) With: 1 refill(s)","timingSchedule":{"event":[{"start":"2014-03-26T00:00:00-04:00","end":"9999-12-31T23:59:59+00:00"}]},"asNeededBoolean":false,"doseQuantity":{"value":-1.0000000000,"units":"No dosage units provided","system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/OrderDoseUnits","code":"NotProvided"}}],"dispense":{"medication":{"reference":"Medication/18"}}}}]}**/
+        function getMedicationPrescriptions(patient) {
+            var searchUrl = fhirUrl + "/MedicationPrescription?patient=" + patient.selfLink.substring(fhirUrl.length, patient.selfLink.length);
+            $http({
+                url: searchUrl,
+                method: "GET",
+                headers: getHeaders(),
+            }).success(function (data) {
+                var parts = data.entry.map(function (medicationPrescription) {
+                    return medicationPrescription.content.contained[0].code.text + " " + parseDateTime(medicationPrescription.content.dateWritten).toLocaleDateString();
+                });
+                patient.detailsParts.push({ header: "Medication Prescriptions", parts: parts });
+            }).error(function (data, status) {
+                handleHttpError("getMedicationPrescriptions", data, status);
+            });
+            patient.hasClinicalData = true;
+        };
+
+        /**
+        {"resourceType":"Bundle","title":"DiagnosticReport 
+        search","id":"urn:uuid:eea08a82-fa56-4c65-8ee9-f6112da2e265","updated":"2015-06-12T02:07:53.349335+00:00",
+        "author":[{"name":"CareEvolution","uri":"http://careevolution.com"}],"totalResults":"2",
+        "link":[{"rel":"fhir-base","href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir"},
+        {"rel":"self",
+        "href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/DiagnosticReport?_query=eaba4360-f2d3-4fb6-8296-6bdf3b7f4674&_start=1"}],
+        "entry":[{"title":"Lipid panel, Fasting  on 3/28/2014 12:00:00 AM -04:00",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/DiagnosticReport/4_e5db1dc36a10e51182930050b664cec5",
+        "updated":"2015-06-11T18:50:49.333+00:00","link":[{"rel":"self",
+        "href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/DiagnosticReport/4_e5db1dc36a10e51182930050b664cec5"}],
+        "content":{"resourceType":"DiagnosticReport","id":"4_e5db1dc36a10e51182930050b664cec5",
+        "name":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.12","code":"80061","display":"Lipid panel, Fasting ","primary":true}],
+        "text":"Lipid panel, Fasting "},"status":"partial","issued":"2014-03-28T00:00:00-04:00",
+        "subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},
+        "diagnosticDateTime":"2014-03-28T00:00:00-04:00",
+        "result":[{"reference":"Observation/2_e7db1dc36a10e51182930050b664cec5"}]}},{"title":"CBC with diff on 3/28/2014 12:00:00 AM -04:00",
+        "id":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/DiagnosticReport/4_e6db1dc36a10e51182930050b664cec5",
+        "updated":"2015-06-11T18:50:49.34+00:00","link":[{"rel":"self",
+        "href":"http://localhost/WebClientTest.Adapter1.WebClient/api/fhir/DiagnosticReport/4_e6db1dc36a10e51182930050b664cec5"}],
+        "content":{"resourceType":"DiagnosticReport","id":"4_e6db1dc36a10e51182930050b664cec5","name":{"coding":[{"system":"urn:oid:2.16.840.1.113883.6.12","code":"85025","display":"CBC with diff","primary":true}],"text":"CBC with diff"},"status":"partial","issued":"2014-03-28T00:00:00-04:00","subject":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},"diagnosticDateTime":"2014-03-28T00:00:00-04:00","result":[{"reference":"Observation/2_e8db1dc36a10e51182930050b664cec5"}]}}]}
+        **/
+        function getReports(patient) {
+            var searchUrl = fhirUrl + "/DiagnosticReport?subject=" + patient.selfLink.substring(fhirUrl.length, patient.selfLink.length);
+            $http({
+                url: searchUrl,
+                method: "GET",
+                headers: getHeaders(),
+            }).success(function (data) {
+                var parts = data.entry.map(function (report) {
+                    return report.content.name.text + " " + parseDateTime(report.content.diagnosticDateTime).toLocaleDateString();
+                });
+                patient.detailsParts.push({ header: "Reports", parts: parts });
+            }).error(function (data, status) {
+                handleHttpError("getReports", data, status);
+            });
+            patient.hasClinicalData = true;
         };
 
         function doSearch(searchUrl) {
@@ -674,6 +873,7 @@
             var genderDisplayName = getGenderDisplayName(patient);
             var displayAgeOrDeceased = composeDisplayAgeOrDeceased(patient);
             return {
+                hasClinicalData: false,
                 resultHeader: displayName,
                 resultLines: [
 					joinNonEmpty(", ", [

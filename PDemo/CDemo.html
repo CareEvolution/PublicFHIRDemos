@@ -169,7 +169,7 @@
 			</div>
 
 			<div class="results col-md-4">
-				<div class="result" ng-repeat="patient in Patients" ng-click="select(patient)" ng-class="{'result-selected': SelectedPatient && (patient===SelectedPatient || patient.selfLink===SelectedPatient.selfLink)}">
+				<div class="result" ng-repeat="person in Persons" ng-click="select(person)" ng-class="{'result-selected': SelectedPerson && (patient===SelectedPatient || patient.selfLink===SelectedPatient.selfLink)}">
 					<div class="result-header">
 						{{ patient.resultHeader }}
 					</div>
