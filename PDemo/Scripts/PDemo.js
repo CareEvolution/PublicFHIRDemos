@@ -522,7 +522,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (condition) {
-                    return condition.content.code.text + " " + parseDateTime(condition.content.dateAsserted).toLocaleDateString();
+                    return getCodeableConceptDisplayName(condition.content.code) + " " + parseDateTime(condition.content.dateAsserted).toLocaleDateString();
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
@@ -557,7 +557,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (procedure) {
-                    return procedure.content.type.text + " " + parseDateTime(procedure.content.date.start).toLocaleDateString();
+                    return getCodeableConceptDisplayName(procedure.content.type) + " " + parseDateTime(procedure.content.date.start).toLocaleDateString();
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
@@ -584,7 +584,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (immunization) {
-                    return immunization.content.vaccineType.text + " " + parseDateTime(immunization.content.date).toLocaleDateString();
+                    return getCodeableConceptDisplayName(immunization.content.vaccineType) + " " + parseDateTime(immunization.content.date).toLocaleDateString();
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
@@ -619,7 +619,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (medicationPrescription) {
-                    return medicationPrescription.content.contained[0].code.text + " " + parseDateTime(medicationPrescription.content.dateWritten).toLocaleDateString();
+                    return getCodeableConceptDisplayName(medicationPrescription.content.contained[0].code) + " " + parseDateTime(medicationPrescription.content.dateWritten).toLocaleDateString();
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
@@ -657,7 +657,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (report) {
-                    return report.content.name.text + " " + parseDateTime(report.content.diagnosticDateTime).toLocaleDateString();
+                    return getCodeableConceptDisplayName(report.content.name) + " " + parseDateTime(report.content.diagnosticDateTime).toLocaleDateString();
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
@@ -696,7 +696,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
                 var parts = data.entry.map(function (observation) {
-                    return observation.content.name.text + " " + parseDateTime(observation.content.appliesDateTime).toLocaleDateString();
+                    return getCodeableConceptDisplayName(observation.content.name) + " " + parseDateTime(observation.content.appliesDateTime).toLocaleDateString();
                 });
                 onSuccess(parts);
             }).error(function (data, status) {
