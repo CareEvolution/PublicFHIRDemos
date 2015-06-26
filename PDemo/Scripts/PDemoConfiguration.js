@@ -107,4 +107,14 @@ var PDemoConfiguration = {
 		{ uri: "urn:oid:2.16.840.1.113883.4.3.54", name: "Driver's license - WV" },
 		{ uri: "urn:oid:2.16.840.1.113883.4.3.56", name: "Driver's license - WY" },
 	],
+
+	patientSearchParameters: {
+		"Encounter": "subject",
+		"Immunization": "subject",
+		"Procedure": "subject",
+		"Condition": "subject",
+		"MedicationPrescription": "patient",
+		"DiagnosticReport": "subject",
+		"Observation": "subject",
+	},
 };
