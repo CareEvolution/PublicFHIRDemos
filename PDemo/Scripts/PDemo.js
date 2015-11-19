@@ -1166,7 +1166,7 @@
             } else {
                 var deceasedDate = parseDateTime(patient.deceasedDate);
                 if (deceasedDate) {
-                    result = "Deceased " + deceasedDate.toLocaleDateString();
+                    result = "Deceased " + formatDate(deceasedDate);
                 }
             }
             if (!result) {
@@ -1175,17 +1175,21 @@
             if (result) {
                 var birthDate = parseDateTime(patient.birthDate);
                 if (birthDate) {
-                    result += " (DOB " + birthDate.toLocaleDateString() + ")";
+                    result += " (DOB " + formatDate(birthDate) + ")";
                 }
             }
             return result;
         }
 
-        function getDisplayableDate(date) {
-            if (date) {
-                return parseDateTime(date).toLocaleDateString();
+        function getDisplayableDate(dateString) {
+            if (dateString) {
+            	return formatDate(parseDateTime(dateString));
             }
             return "";
+        }
+
+        function formatDate(date) {
+        	return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear()
         }
 
         function getAge(patient) {
