@@ -1168,7 +1168,7 @@
             if (patient.deceasedBool) {
                 result = "Deceased";
             } else {
-                var deceasedDate = parseDateTime(patient.deceasedDate);
+                var deceasedDate = parseDate(patient.deceasedDate);
                 if (deceasedDate) {
                     result = "Deceased " + formatDate(deceasedDate);
                 }
@@ -1177,7 +1177,7 @@
                 result = addPrefixSuffixNonEmpty("Age ", getAge(patient), "");
             }
             if (result) {
-                var birthDate = parseDateTime(patient.birthDate);
+                var birthDate = parseDate(patient.birthDate);
                 if (birthDate) {
                     result += " (DOB " + formatDate(birthDate) + ")";
                 }
@@ -1187,7 +1187,7 @@
 
         function getDisplayableDate(dateString) {
             if (dateString) {
-            	return formatDate(parseDateTime(dateString));
+            	return formatDate(parseDate(dateString));
             }
             return "";
         }
@@ -1197,7 +1197,7 @@
         }
 
         function getAge(patient) {
-            var birthDate = parseDateTime(patient.birthDate);
+            var birthDate = parseDate(patient.birthDate);
             if (!birthDate) {
                 return null;
             }
@@ -1229,6 +1229,21 @@
                 return null;
             }
             return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        }
+
+        function parseDate(dateTimeString) {
+        	if (!dateTimeString) {
+        		return null;
+        	}
+        	try {
+        		return new Date(
+					parseInt(dateTimeString.substr(0, 4)),
+					parseInt(dateTimeString.substr(5, 2)) - 1,
+					parseInt(dateTimeString.substr(8, 2))
+				);
+        	} catch (e) {
+        		return null;
+        	}
         }
 
         function parseDateTime(dateTimeString) {
