@@ -498,7 +498,7 @@
         	if (patientId[0] === "/") {
         		patientId = patientId.substr(1);
         	}
-        	var searchUrl = fhirUrl + "/" + resourceType + "?" + patientSearchParameter + "=" + encodeURIComponent(patientId);
+        	var searchUrl = fhirUrl + "/" + resourceType + "?_count=100&" + patientSearchParameter + "=" + encodeURIComponent(patientId);
         	$http({
         		url: searchUrl,
         		method: "GET",
