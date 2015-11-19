@@ -200,6 +200,10 @@
             return sessionStorage[SESSION_FHIR_URL];
         };
 
+        $scope.getProductDescription = function () {
+        	return "Patient Demographics " + PDemoConfiguration.version + " (FHIR " + PDemoConfiguration.fhirVersion + ") - Copyright \xA9 " + PDemoConfiguration.copyrightYears + " CareEvolution Inc."
+        };
+
         $scope.requireLogin = function () {
             return mode === MODE_LOGIN && !authorizationToken;
         };
