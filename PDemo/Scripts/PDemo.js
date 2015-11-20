@@ -179,6 +179,7 @@
                         redirectParameters = appendParameter(redirectParameters, "response_type", "code");
                         redirectParameters = appendParameter(redirectParameters, "client_id", PDemoConfiguration.clientID);
                         redirectParameters = appendParameter(redirectParameters, "redirect_uri", getRedirectUrl());
+                        redirectParameters = appendParameter(redirectParameters, "aud", fhirUrl);
                         redirectParameters = appendParameter(redirectParameters, "scope", "user/*.*");
                         mode = MODE_CODE;
                         sessionStorage[SESSION_FHIR_URL] = fhirUrl;
