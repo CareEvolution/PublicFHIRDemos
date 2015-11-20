@@ -159,10 +159,16 @@
                         var extensions = data.rest[0].security.extension;
                         for (var i = 0; i < extensions.length; i++) {
                             var extension = extensions[i];
-                            if (extension.url === "http://fhir-registry.smarthealthit.org/Profile/oauth-uris#authorize") {
-                                authorizeUrl = extension.valueUri;
-                            } else if (extension.url === "http://fhir-registry.smarthealthit.org/Profile/oauth-uris#token") {
-                                tokenUrl = extension.valueUri;
+                            if (extension.url === "http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris" && extension.extension) {
+                            	var subExtensions = extension.extension;
+                            	for (var j = 0; j < subExtensions.length; j++) {
+                            		var subExtension = subExtensions[j];
+                            		if (subExtension.url === "authorize") {
+                            			authorizeUrl = subExtension.valueUri;
+                            		} else if (subExtension.url === "token") {
+                            			tokenUrl = subExtension.valueUri;
+                            		}
+                            	}
                             }
                         }
                     }
@@ -489,7 +495,7 @@
         function getPatientResources(patientId, resourceType, mapResource, onSuccess) {
         	var patientSearchParameter = PDemoConfiguration.patientSearchParameters[resourceType];
         	if (!patientSearchParameter) {
-        		throw "No patient search parameter definied for " + resourceType;
+        		throw "No patient search parameter defined for " + resourceType;
         	}
 			// Some server (e.g. Furore) do not like the complete URL as the id, nor an initial '/', so we reduce the id to a relative URL
         	if (patientId.indexOf(fhirUrl) === 0) {
@@ -508,8 +514,8 @@
         		if (data.entry) {
         			for (var i = 0; i < data.entry.length; i++) {
         				var entry = data.entry[i];
-        				if (entry && entry.content) {
-        					var mappedResource = mapResource(entry.content);
+        				if (entry && entry.resource) {
+        					var mappedResource = mapResource(entry.resource);
         					if (mappedResource) {
         						parts.push(mappedResource);
         					}
@@ -527,33 +533,7 @@
         }
 
         function mapEncounter(encounter) {
-			/**
-				"resourceType":"Encounter",
-				"id":"d0db1dc3-6a10-e511-8293-0050b664cec5",
-				"identifier":[
-					{
-						"use":"official",
-						"value":"DefaultNameSpaceCode_3/20/201"
-					}
-				],
-				"class":"outpatient",
-				"subject":{
-					"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"
-				},
-				"period":{
-					"start":"2014-03-20T00:00:00-04:00"
-				},
-				"location":[
-					{
-						"location": {
-							"reference":"Location/cedb1dc3-6a10-e511-8293-0050b664cec5"
-						},
-						"period": {
-							"start":"2014-03-20T00:00:00-04:00"
-						}
-					}
-				]
-			*/
+        	// http://www.hl7.org/implement/standards/fhir/encounter.html
 			var period = encounter.period;
         	if (period && period.start) {
         		var part = "Admitted on " + getDisplayableDate(period.start);
@@ -566,161 +546,30 @@
         }
 
         function mapProcedure(procedure) {
-        	/***
-				"resourceType":"Procedure",
-				"id":"72a8a6af-5c10-e511-8293-0050b664cec5",
-				"subject":{
-					"reference":"Patient/61a8a6af-5c10-e511-8293-0050b664cec5"
-				},
-				"type":{
-					"coding":[
-						{
-							"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DemoNamespace/ProcedureCode",
-							"code":"283",
-							"display":"TONSILLECTOMY/ADENOIDEC","primary":true
-						}
-					],
-					"text":"TONSILLECTOMY/ADENOIDEC"
-				},
-				"date":{
-					"start":"2015-06-10T00:00:00-04:00",
-					"end":"2015-06-10T00:00:00-04:00"
-				},
-				"encounter":{
-					"reference":"Encounter/65a8a6af-5c10-e511-8293-0050b664cec5"
-				}
-			**/
-        	return codeAndDateDescription("procedure", procedure.type, procedure.date ? procedure.date.start : null);
+        	// http://www.hl7.org/implement/standards/fhir/procedure.html
+        	return codeAndDateDescription("procedure", procedure.code, procedure.performedPeriod ? procedure.performedPeriod.start : procedure.performedDateTime);
         }
 
         function mapImmunization(immunization) {
-        	/**
-				"resourceType":"Immunization",
-				"id":"e0db1dc3-6a10-e511-8293-0050b664cec5",
-				"date":"7/23/2013 12:00:00 AM -04:00",
-				"vaccineType":{
-					"coding":[
-						{
-							"system":"urn:oid:2.16.840.1.113883.6.59",
-							"code":"62",
-							"display":"H PAPILLOMA VACC 3 DOSE IM GARDASIL",
-							"primary":true
-						}
-					],
-					"text":"H PAPILLOMA VACC 3 DOSE IM GARDASIL"
-				},
-				"subject":{
-					"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"
-				},
-				"refusedIndicator":true,
-				"doseQuantity":{
-					"value":-1.0000000000,
-					"units":"No dosage units provided",
-					"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/MedicationAdministrationDoseUnits",
-					"code":"NotProvided"
-				}
-			**/
-        	return codeAndDateDescription("immunization", immunization.vaccineType, immunization.date);
+        	// http://www.hl7.org/implement/standards/fhir/immunization.html
+        	return codeAndDateDescription("immunization", immunization.vaccineCode, immunization.date);
         }
 
-        function mapMedicationPrescription(medicationPrescription) {
-        	/**
-				"resourceType":"MedicationPrescription","id":"d3db1dc3-6a10-e511-8293-0050b664cec5",
-				"dateWritten":"2014-03-26T00:00:00-04:00","status":"completed",
-				"patient":{"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"},
-				"prescriber":{"reference":"Practitioner/c6db1dc3-6a10-e511-8293-0050b664cec5"},
-				"medication":{
-					"reference":"Medication/18"
-				},
-				"dosageInstruction":[
-					{
-						"text":"Motrin:  1 tablet by Oral route every 6-8 hours PRN Give one tablet with food Dispense: 60 tab(s) With: 1 refill(s)",
-						"timingSchedule":{
-							"event":[
-								{
-									"start":"2014-03-26T00:00:00-04:00",
-									"end":"9999-12-31T23:59:59+00:00"
-								}
-							]
-						},
-						"asNeededBoolean":false,
-						"doseQuantity":{
-							"value":-1.0000000000,
-							"units":"No dosage units provided",
-							"system":"http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/DefaultNameSpaceCode/OrderDoseUnits",
-							"code":"NotProvided"
-						}
-					}
-				],
-				"dispense":{
-					"medication":{
-						"reference":"Medication/18"
-					}
-				}
-			**/
-        	// TODO ... Read the code from reference medication code  
-        	var medication = null;
-        	if (medicationPrescription.contained && medicationPrescription.contained.length > 0) {
-        		medication = medicationPrescription.contained[0];
-            }
-        	return codeAndDateDescription("medication", medication ? medication.code : null, medicationPrescription.dateWritten);
+        function mapMedicationOrder(medicationOrder) {
+        	// http://www.hl7.org/implement/standards/fhir/medicationorder.html
+        	// TODO ... If medicationCodeableConcept is missing get it from referenced medication (medicationOrder.medicationReference)
+        	var medicationCode = medicationOrder.medicationCodeableConcept
+        	return codeAndDateDescription("medication", medicationCode, medicationOrder.dateWritten);
 		}
 
         function mapReport(report) {
-        	/**
-				"resourceType":"DiagnosticReport",
-				"id":"4_e5db1dc36a10e51182930050b664cec5",
-				"name":{
-					"coding":[
-						{
-							"system":"urn:oid:2.16.840.1.113883.6.12",
-							"code":"80061",
-							"display":"Lipid panel, Fasting ",
-							"primary":true
-						}
-					],
-					"text":"Lipid panel, Fasting "
-				},
-				"status":"partial",
-				"issued":"2014-03-28T00:00:00-04:00",
-				"subject":{
-					"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"
-				},
-				"diagnosticDateTime":"2014-03-28T00:00:00-04:00",
-				"result":[
-					{
-						"reference":"Observation/2_e7db1dc36a10e51182930050b664cec5"}
-					]
-				}
-			**/
-        	return codeAndDateDescription("report", report.name, report.diagnosticDateTime);
+        	// http://www.hl7.org/implement/standards/fhir/DiagnosticReport.html
+        	return codeAndDateDescription("report", report.code, report.effectivePeriod ? report.effectivePeriod.start : report.effectiveDateTime);
         }
 
         function mapObservation(observation) {
-        	/**
-				"resourceType":"Observation",
-				"id":"2_e8db1dc36a10e51182930050b664cec5",
-				"name":{
-					"coding":[
-						{
-							"system":"urn:oid:2.16.840.1.113883.6.1",
-							"code":"85025",
-							"display":"CBC with diff - CBC with diff (LABCORP)\r\nNote: Documents are attached to this order that cannot be displayed here.",
-							"primary":true
-						}
-					],
-					"text":"CBC with diff - CBC with diff (LABCORP)\r\nNote: Documents are attached to this order that cannot be displayed here.
-				"},
-				"valueString":"March 28, 2014",
-				"appliesDateTime":"2014-03-28T00:00:00-04:00",
-				"issued":"2014-03-28T00:00:00-04:00",
-				"status":"final",
-				"reliability": "ok",
-				"subject":{
-					"reference":"Patient/ccdb1dc3-6a10-e511-8293-0050b664cec5"
-				}
-			**/
-        	return codeAndDateDescription("observation", observation.name, observation.appliesDateTime);
+        	// http://www.hl7.org/implement/standards/fhir/Observation.html
+        	return codeAndDateDescription("observation", observation.code, observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime);
         }
 
         function codeAndDateDescription(resourceDescription, codeableConcept, dateTime) {
@@ -740,61 +589,17 @@
                 method: "GET",
                 headers: getHeaders(),
             }).success(function (data) {
-                $scope.Searching = false;
-                /*
-				{
-					"resourceType": "Bundle",
-					"title": "Patient search",
-					"id": "urn:uuid:d7a29f70-634d-47ab-9d1c-6e24c7ab640e",
-					"updated": "2014-12-16T21:34:35.7046776+00:00",
-					"author": [{ "name": "CareEvolution FHIR server", "uri": "http://careevolution.com" }],
-					"totalResults": "10",
-					"link": [
-						{ "rel": "self", "href": "https://localhost:8080/fhir/Patient?family=d&_start=1" },
-						{ "rel": "fhir-base", "href": "https://localhost:8080/fhir" }
-					],
-					"entry": [
-						{
-							"title": "Patient Demoski, Fran",
-							"id": "urn:uuid:93ea3c92-ab3d-e411-82b1-281878d58b60",
-							"updated": "2014-09-16T10:45:31.02-04:00",
-							"link": [
-								{ "rel": "self", "href": "https://localhost:8080/fhir/Patient/93ea3c92-ab3d-e411-82b1-281878d58b60" }
-							],
-							"content":
-								{
-									"resourceType": "Patient",
-									"id": "93ea3c92-ab3d-e411-82b1-281878d58b60",
-									"identifier": [
-										{ "system": "urn:oid:2.16.840.1.113883.4.1", "value": "987229876" }
-									], 
-									"name": [
-										{ "use": "official", "family": ["Demoski"], "given": ["Fran"] }
-									], 
-									"gender": { 
-										"coding": [
-											{ "system": "http://careevolution.com/namespaces/04aae852-c30d-4781-9eb8-a274592fff86/TestCodespace/Gender", "code": "F" }
-										] 
-									}, 
-									"birthDate": "2009-08-17", 
-									"deceasedBoolean": false, 
-									"address": [
-										{ "use": "home", "line": ["101 Drury Lane"], "city": "Churchill", "state": "MI", "zip": "48887", "country": "USA" }
-									]
-								}
-						}
-					]
-				}
-				*/
+            	$scope.Searching = false;
+            	// http://www.hl7.org/implement/standards/fhir/Bundle.html
                 if (data.entry) {
                     var knownIdentifierSystem = computeKnownIdentifierSystems();
                     for (var i = 0; i < data.entry.length; i++) {
                         var entry = data.entry[i];
-                        var patient = createPatient(entry.content, entry.id, getSelfLink(entry), knownIdentifierSystem);
+                        var patient = createPatient(entry.resource, entry.resource.id, entry.fullUrl, knownIdentifierSystem);
                         $scope.Patients.push(patient);
                     }
                 }
-                $scope.TotalPatientsCount = data.totalResults;
+                $scope.TotalPatientsCount = data.total;
                 $scope.NextPatientsSearchUrl = getLinkHRef(data, "next");
             }).error(function (data, status) {
                 $scope.Searching = false;
@@ -827,8 +632,8 @@
             if (status === 401) {
                 $scope.SearchErrorMessage = operation + " failed: not authorized. Please sign in again";
                 $scope.logout();
-            } else if (data && data.issue && data.issue.length > 0 && data.issue[0].details) {
-                $scope.SearchErrorMessage = operation + " failed: " + data.issue[0].details;
+            } else if (data && data.issue && data.issue.length > 0 && data.issue[0].details && data.issue[0].details.text) {
+            	$scope.SearchErrorMessage = operation + " failed: " + data.issue[0].details.text;
             } else if (status === 0) {
                 $scope.SearchErrorMessage = operation + " failed: cannot connect to " + fhirUrl;
             } else {
@@ -836,14 +641,14 @@
             }
         }
 
-        function getLinkHRef(bundle, rel) {
+        function getLinkHRef(bundle, relation) {
             if (!bundle || !bundle.link) {
                 return null;
             }
             var links = bundle.link;
             for (var i = 0; i < links.length; i++) {
-                if (links[i].rel === rel) {
-                    return links[i].href;
+            	if (links[i].relation === relation) {
+                    return links[i].url;
                 }
             }
             return null;
@@ -922,18 +727,6 @@
                 return s;
             }
             return "0" + s;
-        }
-
-        function getSelfLink(entry) {
-            if (entry.link) {
-                for (var i = 0; i < entry.link.length; i++) {
-                    var link = entry.link[i];
-                    if (link.rel === "self" && link.href) {
-                        return link.href;
-                    }
-                }
-            }
-            return entry.id;
         }
 
         function createPatient(patient, id, selfLink, knownIdentifierSystems) {
@@ -1041,11 +834,11 @@
 					    },
 					},
 					{
-					    header: "Medication prescriptions",
+					    header: "Medication orders",
 					    parts: [". . ."],
 					    collapsed: true,
 					    load: function (onSuccess) {
-					    	getPatientResources(id, "MedicationPrescription", mapMedicationPrescription, onSuccess, "patient")
+					    	getPatientResources(id, "MedicationOrder", mapMedicationOrder, onSuccess, "patient")
 					    },
 					},
 					{

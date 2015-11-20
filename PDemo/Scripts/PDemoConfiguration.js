@@ -6,11 +6,11 @@
 
 var PDemoConfiguration = {
 	// Client identifier used by the OAuth2 protocol - it must be accepted by the OAuth2 authorization server
-	clientID: "d20b230b-a4f5-46af-a6d3-d6a0b802b34e",
+	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
+	
+	version: "1.1",
 
-	version: "1.0",
-
-	fhirVersion: "DSTU 1",
+	fhirVersion: "DSTU 2",
 
 	copyrightYears: "2015",
 
@@ -119,7 +119,7 @@ var PDemoConfiguration = {
 		"Immunization": "subject",
 		"Procedure": "subject",
 		"Condition": "subject",
-		"MedicationPrescription": "patient",
+		"MedicationOrder": "patient",
 		"DiagnosticReport": "subject",
 		"Observation": "subject",
 	},
