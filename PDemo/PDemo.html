@@ -91,8 +91,11 @@
 						<label for="name">{{ searchFieldLabel('name') }}</label>
 						<input id="name" name="name" type="text" class="form-control" ng-model="Name" />
 						<div>
-							<input type="checkbox" ng-model="NameExact" />
-							Exact
+							<select ng-model="NameOperator">
+								<option value="">Starts with</option>
+								<option value="contains">Contains</option>
+								<option value="exact">Exact</option>
+							</select>
 						</div>
 					</div>
 
@@ -100,8 +103,11 @@
 						<label for="lastName">{{ searchFieldLabel('family') }}</label>
 						<input id="lastName" name="lastName" type="text" class="form-control" ng-model="Family" />
 						<div>
-							<input type="checkbox" ng-model="FamilyExact" />
-							Exact
+							<select ng-model="FamilyOperator">
+								<option value="">Starts with</option>
+								<option value="contains">Contains</option>
+								<option value="exact">Exact</option>
+							</select>
 						</div>
 					</div>
 
@@ -109,8 +115,11 @@
 						<label for="firstName">{{ searchFieldLabel('given') }}</label>
 						<input id="firstName" name="firstName" type="text" class="form-control" ng-model="Given">
 						<div>
-							<input type="checkbox" ng-model="GivenExact">
-							Exact
+							<select ng-model="GivenOperator">
+								<option value="">Starts with</option>
+								<option value="contains">Contains</option>
+								<option value="exact">Exact</option>
+							</select>
 						</div>
 					</div>
 
@@ -123,8 +132,11 @@
 						<label for="address">{{ searchFieldLabel('address') }}</label>
 						<input id="address" name="address" type="text" class="form-control" ng-model="Address">
 						<div>
-							<input type="checkbox" ng-model="AddressExact">
-							Exact
+							<select ng-model="AddressOperator">
+								<option value="">Starts with</option>
+								<option value="contains">Contains</option>
+								<option value="exact">Exact</option>
+							</select>
 						</div>
 					</div>
 
@@ -141,8 +153,11 @@
 						<label for="telecom">{{ searchFieldLabel('telecom') }}</label>
 						<input id="telecom" name="telecom" type="text" class="form-control" ng-model="Telecom">
 						<div>
-							<input type="checkbox" ng-model="TelecomExact">
-							Exact
+							<select ng-model="TelecomOperator">
+								<option value="">Starts with</option>
+								<option value="contains">Contains</option>
+								<option value="exact">Exact</option>
+							</select>
 						</div>
 					</div>
 
@@ -265,44 +280,6 @@
 						<button type="button" class="btn btn-default" title="Add identifier" ng-click="configureAddIdentifierSystem()">
 							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
 						</button>
-					</div>
-				</fieldset>
-				<fieldset>
-					<legend>Gender</legend>
-					<div class="form-group">
-						<table>
-							<thead>
-								<tr>
-									<th class="width-name">Value</th>
-									<th class="width-name">Display</th>
-									<th class="width-icon"></th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr ng-repeat="value in EditableConfiguration.genderValueSet.values" ng-form="genderValue">
-									<td class="width-name" ng-class="{'has-error': genderValue.code.$invalid}">
-										<input type="text" name="code" class="form-control" ng-model="value.code" required />
-										<span class="help-block" ng-show="genderValue.code.$invalid">Required.</span>
-									</td>
-									<td class="width-name" ng-class="{'has-error': genderValue.name.$invalid}">
-										<input type="text" name="name" class="form-control" ng-model="value.name" required />
-										<span class="help-block" ng-show="genderValue.name.$invalid">Required.</span>
-									</td>
-									<td class="width-icon">
-										<button type="button" class="btn btn-default" title="Remove value" ng-click="configureRemoveGenderValue(value)">
-											<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-										</button>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-						<button type="button" class="btn btn-default" title="Add value" ng-click="configureAddGenderValue()">
-							<span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-						</button>
-					</div>
-					<div class="form-group">
-						<label for="genderSystemUri">System URI (optional:</label>
-						<input id="genderSystemUri" type="text" class="form-control width-uri" ng-model="EditableConfiguration.genderValueSet.uri">
 					</div>
 				</fieldset>
 				<fieldset>

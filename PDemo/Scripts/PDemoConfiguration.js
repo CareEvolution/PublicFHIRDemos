@@ -8,7 +8,7 @@ var PDemoConfiguration = {
 	// Client identifier used by the OAuth2 protocol - it must be accepted by the OAuth2 authorization server
 	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
 	
-	version: "1.1",
+	version: "1.2",
 
 	fhirVersion: "DSTU 2",
 
@@ -48,14 +48,13 @@ var PDemoConfiguration = {
 		{ uri: "urn:oid:2.16.840.1.113883.4.1", name: "SSN" },
 	],
 
-	defaultGenderValueSet: {
-		uri: null,
-		values: [
-			{ code: "F", name: "Female" },
-			{ code: "M", name: "Male" },
-			{ code: "UN", name: "Undifferentiated" },
-		]
-	},
+	// See http://www.hl7.org/implement/standards/fhir/valueset-administrative-gender.html
+	genderValues: [
+		{ code: "male", name: "Male" },
+		{ code: "female", name: "Female" },
+		{ code: "other", name: "Other" },
+		{ code: "unknown", name: "Unknown" },
+	],
 
 	// See http://www.hl7.org/implement/standards/fhir/terminologies-systems.html#identifiersystems
 	knownIdentifierSystems: [
@@ -115,12 +114,12 @@ var PDemoConfiguration = {
 	],
 
 	patientSearchParameters: {
-		"Encounter": "subject",
-		"Immunization": "subject",
-		"Procedure": "subject",
-		"Condition": "subject",
+		"Encounter": "patient",
+		"Immunization": "patient",
+		"Procedure": "patient",
+		"Condition": "patient",
 		"MedicationOrder": "patient",
-		"DiagnosticReport": "subject",
-		"Observation": "subject",
+		"DiagnosticReport": "patient",
+		"Observation": "patient",
 	},
 };

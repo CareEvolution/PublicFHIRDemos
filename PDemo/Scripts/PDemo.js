@@ -72,17 +72,17 @@
         $scope.IdentifierSystem = null;
         $scope.Identifier = null;
         $scope.Name = null;
-        $scope.NameExact = false;
+        $scope.NameOperator = "";
         $scope.Family = null;
-        $scope.FamilyExact = false;
+        $scope.FamilyOperator = "";
         $scope.Given = null;
-        $scope.GivenExact = false;
+        $scope.GivenOperator = "";
         $scope.BirthDate = null;
         $scope.Address = null;
-        $scope.AddressExact = false;
+        $scope.AddressOperator = "";
         $scope.Gender = null;
         $scope.Telecom = null;
-        $scope.TelecomExact = false;
+        $scope.TelecomOperator = "";
         $scope.Sort = null;
         $scope.Sorts = PDemoConfiguration.sorts;
 
@@ -275,7 +275,7 @@
         };
 
         $scope.genderValues = function () {
-            return getConfiguration().genderValueSet.values;
+            return PDemoConfiguration.genderValues;
         };
 
         $scope.searchIdentifierSystems = function () {
@@ -315,13 +315,13 @@
         $scope.search = function (resource) {
             var parameters = "";
             parameters = appendCodeSearchParameter(parameters, "identifier", $scope.IdentifierSystem, $scope.Identifier);
-            parameters = appendStringSearchParameter(parameters, "name", $scope.Name, $scope.NameExact);
-            parameters = appendStringSearchParameter(parameters, "family", $scope.Family, $scope.FamilyExact);
-            parameters = appendStringSearchParameter(parameters, "given", $scope.Given, $scope.GivenExact);
+            parameters = appendStringSearchParameter(parameters, "name", $scope.Name, $scope.NameOperator);
+            parameters = appendStringSearchParameter(parameters, "family", $scope.Family, $scope.FamilyOperator);
+            parameters = appendStringSearchParameter(parameters, "given", $scope.Given, $scope.GivenOperator);
             parameters = appendDateSearchParameter(parameters, "birthdate", $scope.BirthDate);
-            parameters = appendStringSearchParameter(parameters, "address", $scope.Address, $scope.AddressExact);
+            parameters = appendStringSearchParameter(parameters, "address", $scope.Address, $scope.AddressOperator);
             parameters = appendCodeSearchParameter(parameters, "gender", getConfiguration().genderValueSet.uri, $scope.Gender);
-            parameters = appendStringSearchParameter(parameters, "telecom", $scope.Telecom, $scope.TelecomExact);
+            parameters = appendStringSearchParameter(parameters, "telecom", $scope.Telecom, $scope.TelecomOperator);
             if ($scope.Sort) {
                 parameters = appendParameter(parameters, "_sort:" + $scope.Sort.direction, $scope.Sort.field);
             }
@@ -363,27 +363,11 @@
             }
         };
 
-        $scope.configureAddGenderValue = function () {
-            var genderValues = $scope.EditableConfiguration.genderValueSet.values;
-            genderValues.push({ code: "", name: "" });
-        };
-
-        $scope.configureRemoveGenderValue = function (value) {
-            var genderValues = $scope.EditableConfiguration.genderValueSet.values;
-            for (var i = 0; i < genderValues.length; i++) {
-                if (genderValues[i] === value) {
-                    genderValues.splice(i, 1);
-                    return;
-                }
-            }
-        };
-
         function getConfiguration() {
             if (!$scope.Configuration) {
                 var defaultValue = {
                     searchFields: PDemoConfiguration.defaultSearchFields,
                     searchIdentifierSystems: PDemoConfiguration.defaultSearchIdentifierSystems,
-                    genderValueSet: PDemoConfiguration.defaultGenderValueSet,
                     resultsPerPage: PDemoConfiguration.defaultResultsPerPage,
                     getDetails: false,
                 };
@@ -420,18 +404,36 @@
                     }
                 }
             }
-            // Check that the currently selected gender is still defined, if not clear it
-            if ($scope.Gender) {
-                var genderValues = value.genderValueSet.values;
-                if (genderValues) {
-                    index = genderValues.length - 1;
-                    while (index >= 0 && genderValues[index].code !== $scope.Gender) {
-                        index--;
-                    }
-                }
-                if (index < 0) {
-                    $scope.Gender = null;
-                }
+        	// Clear the search fields that are not enabled
+            if (!value.searchFields["identifier"]) {
+            	$scope.IdentifierSystem = null;
+            	$scope.Identifier = null;
+            }
+            if (!value.searchFields["name"]) {
+            	$scope.Name = null;
+            	$scope.NameOperator = "";
+            }
+            if (!value.searchFields["family"]) {
+            	$scope.Family = null;
+            	$scope.FamilyOperator = "";
+            }
+            if (!value.searchFields["given"]) {
+            	$scope.Given = null;
+            	$scope.GivenOperator = "";
+            }
+            if (!value.searchFields["birthdate"]) {
+            	$scope.BirthDate = null;
+            }
+            if (!value.searchFields["address"]) {
+            	$scope.Address = null;
+            	$scope.AddressOperator = "";
+            }
+            if (!value.searchFields["gender"]) {
+            	$scope.Gender = null;
+            }
+            if (!value.searchFields["telecom"]) {
+            	$scope.Telecom = null;
+            	$scope.TelecomOperator = "";
             }
         }
 
@@ -655,12 +657,12 @@
             return null;
         }
 
-        function appendStringSearchParameter(parameters, parameterName, value, exact) {
+        function appendStringSearchParameter(parameters, parameterName, value, operator) {
             if (!value) {
                 return parameters;
             }
-            if (exact) {
-                parameterName += ":exact";
+            if (operator) {
+                parameterName += ":" + operator;
             }
             return appendParameter(parameters, parameterName, escapeFhirSearchParameter(value));
         }
@@ -909,7 +911,13 @@
         }
 
         function getGenderDisplayName(patient) {
-            return getCodeableConceptDisplayName(patient.gender, { "m": "Male", "f": "Female" });
+        	var genderValues = PDemoConfiguration.genderValues;
+        	for (var i = 0; i < genderValues.length; i++) {
+        		if (patient.gender === genderValues[i].code) {
+        			return genderValues[i].name;
+        		}
+        	}
+        	return patient.gender;
         }
 
         function getCodeableConceptDisplayName(codeableConcept, codeMap) {
