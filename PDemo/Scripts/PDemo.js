@@ -320,7 +320,7 @@
             parameters = appendStringSearchParameter(parameters, "given", $scope.Given, $scope.GivenOperator);
             parameters = appendDateSearchParameter(parameters, "birthdate", $scope.BirthDate);
             parameters = appendStringSearchParameter(parameters, "address", $scope.Address, $scope.AddressOperator);
-            parameters = appendCodeSearchParameter(parameters, "gender", getConfiguration().genderValueSet.uri, $scope.Gender);
+            parameters = appendCodeSearchParameter(parameters, "gender", null, $scope.Gender);
             parameters = appendStringSearchParameter(parameters, "telecom", $scope.Telecom, $scope.TelecomOperator);
             if ($scope.Sort) {
                 parameters = appendParameter(parameters, "_sort:" + $scope.Sort.direction, $scope.Sort.field);
