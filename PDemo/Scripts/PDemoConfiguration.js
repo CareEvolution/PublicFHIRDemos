@@ -8,7 +8,7 @@ var PDemoConfiguration = {
 	// Client identifier used by the OAuth2 protocol - it must be accepted by the OAuth2 authorization server
 	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
 	
-	version: "1.2",
+	version: "1.3",
 
 	fhirVersion: "DSTU 2",
 
@@ -54,6 +54,25 @@ var PDemoConfiguration = {
 		{ code: "female", name: "Female" },
 		{ code: "other", name: "Other" },
 		{ code: "unknown", name: "Unknown" },
+	],
+
+	// See https://www.hl7.org/fhir/daf/valueset-daf-race.html
+	raceValues: [
+		{ code: "1002-5", name: "American Indian", uri: "http://hl7.org/fhir/v3/Race" },
+		{ code: "2028-9", name: "Asian", uri: "http://hl7.org/fhir/v3/Race" },
+		{ code: "2054-5", name: "Black or African American", uri: "http://hl7.org/fhir/v3/Race" },
+		{ code: "2076-8", name: "Native Hawaiian or Other Pacific Islander", uri: "http://hl7.org/fhir/v3/Race" },
+		{ code: "2106-3", name: "White", uri: "http://hl7.org/fhir/v3/Race" },
+		{ code: "UNK", name: "Unknown", uri: "http://hl7.org/fhir/v3/NullFlavor" },
+		{ code: "ASKU", name: "Asked but no answer", uri: "http://hl7.org/fhir/v3/NullFlavor" },
+	],
+
+	// See https://www.hl7.org/fhir/daf/valueset-daf-ethnicity.html
+	ethnicityValues: [
+		{ code: "2135-2", name: "Hispanic or Latino", uri: "http://hl7.org/fhir/v3/Ethnicity" },
+		{ code: "2186-5", name: "Not Hispanic or Latino", uri: "http://hl7.org/fhir/v3/Ethnicity" },
+		{ code: "UNK", name: "Unknown", uri: "http://hl7.org/fhir/v3/NullFlavor" },
+		{ code: "ASKU", name: "Asked but no answer", uri: "http://hl7.org/fhir/v3/NullFlavor" },
 	],
 
 	// See http://www.hl7.org/implement/standards/fhir/terminologies-systems.html#identifiersystems
@@ -121,5 +140,6 @@ var PDemoConfiguration = {
 		"MedicationOrder": "patient",
 		"DiagnosticReport": "patient",
 		"Observation": "patient",
+		"AllergyIntolerance": "patient",
 	},
 };

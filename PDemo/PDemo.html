@@ -128,6 +128,20 @@
 						<input id="birthDate" name="birthDate" type="text" class="form-control" ng-model="BirthDate">
 					</div>
 
+					<div class="form-group" ng-show="searchFieldEnabled('age')">
+						<label for="age">{{ searchFieldLabel('age') }}</label>
+						<input id="age" name="age" type="text" class="form-control" ng-model="Age">
+						<div>
+							<select ng-model="AgeOperator">
+								<option value="">Equal</option>
+								<option value="gt">Greater</option>
+								<option value="ge">Greater or equal</option>
+								<option value="lt">Less</option>
+								<option value="le">Less or equal</option>
+							</select>
+						</div>
+					</div>
+
 					<div class="form-group" ng-show="searchFieldEnabled('address')">
 						<label for="address">{{ searchFieldLabel('address') }}</label>
 						<input id="address" name="address" type="text" class="form-control" ng-model="Address">
@@ -145,6 +159,24 @@
 						<select id="gender" class="form-control"
 								ng-model="Gender"
 								ng-options="value.code as value.name for value in genderValues()">
+							<option value="">&lt;Any&gt;</option>
+						</select>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('race')">
+						<label for="race">{{ searchFieldLabel('race') }}</label>
+						<select id="race" class="form-control"
+								ng-model="Race"
+								ng-options="value as value.name for value in raceValues()">
+							<option value="">&lt;Any&gt;</option>
+						</select>
+					</div>
+
+					<div class="form-group" ng-show="searchFieldEnabled('ethnicity')">
+						<label for="ethnicity">{{ searchFieldLabel('ethnicity') }}</label>
+						<select id="ethnicity" class="form-control"
+								ng-model="Ethnicity"
+								ng-options="value as value.name for value in ethnicityValues()">
 							<option value="">&lt;Any&gt;</option>
 						</select>
 					</div>
@@ -184,7 +216,7 @@
 			</div>
 
 			<div class="results col-md-4">
-				<div class="result" ng-repeat="patient in Patients" ng-click="select(patient)" ng-class="{'result-selected': SelectedPatient && (patient===SelectedPatient || patient.selfLink===SelectedPatient.selfLink)}">
+				<div class="result" ng-repeat="patient in Patients" ng-click="select(patient)" ng-class="{'result-selected': SelectedPatient && (patient===SelectedPatient || (patient.selfLink &&  patient.selfLink===SelectedPatient.selfLink))}">
 					<div class="result-header">
 						{{ patient.resultHeader }}
 					</div>

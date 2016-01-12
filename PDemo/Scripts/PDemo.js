@@ -67,6 +67,9 @@
 			{ field: "address", label: "Address" },
 			{ field: "gender", label: "Gender" },
 			{ field: "telecom", label: "Contact (phone/e-mail)" },
+			{ field: "race", label: "Race" },
+			{ field: "ethnicity", label: "Ethnicity" },
+			{ field: "age", label: "Age" },
         ];
 
         $scope.IdentifierSystem = null;
@@ -83,6 +86,11 @@
         $scope.Gender = null;
         $scope.Telecom = null;
         $scope.TelecomOperator = "";
+        $scope.Race = null;
+        $scope.Ethnicity = null;
+        $scope.Age = null;
+        $scope.AgeOperator = "";
+
         $scope.Sort = null;
         $scope.Sorts = PDemoConfiguration.sorts;
 
@@ -278,6 +286,14 @@
             return PDemoConfiguration.genderValues;
         };
 
+        $scope.raceValues = function () {
+        	return PDemoConfiguration.raceValues;
+        };
+
+        $scope.ethnicityValues = function () {
+        	return PDemoConfiguration.ethnicityValues;
+        };
+
         $scope.searchIdentifierSystems = function () {
             return getConfiguration().searchIdentifierSystems;
         };
@@ -319,9 +335,16 @@
             parameters = appendStringSearchParameter(parameters, "family", $scope.Family, $scope.FamilyOperator);
             parameters = appendStringSearchParameter(parameters, "given", $scope.Given, $scope.GivenOperator);
             parameters = appendDateSearchParameter(parameters, "birthdate", $scope.BirthDate);
+            parameters = appendNumberSearchParameter(parameters, "age", $scope.Age, $scope.AgeOperator);
             parameters = appendStringSearchParameter(parameters, "address", $scope.Address, $scope.AddressOperator);
             parameters = appendCodeSearchParameter(parameters, "gender", null, $scope.Gender);
             parameters = appendStringSearchParameter(parameters, "telecom", $scope.Telecom, $scope.TelecomOperator);
+			if ($scope.Race) {
+	            parameters = appendCodeSearchParameter(parameters, "race", $scope.Race.uri, $scope.Race.code);
+			}
+			if ($scope.Ethnicity) {
+	            parameters = appendCodeSearchParameter(parameters, "ethnicity", $scope.Ethnicity.uri, $scope.Ethnicity.code);
+			}
             if ($scope.Sort) {
                 parameters = appendParameter(parameters, "_sort:" + $scope.Sort.direction, $scope.Sort.field);
             }
@@ -435,7 +458,17 @@
             	$scope.Telecom = null;
             	$scope.TelecomOperator = "";
             }
-        }
+            if (!value.searchFields["race"]) {
+            	$scope.Race = null;
+            }
+            if (!value.searchFields["ethnicity"]) {
+            	$scope.Ethnicity = null;
+            }
+            if (!value.searchFields["age"]) {
+            	$scope.Age = null;
+            	$scope.AgeOperator = "";
+            }
+		}
 
         function resetConfiguration() {
             localStorage.removeItem(CONFIGURATION);
@@ -575,6 +608,28 @@
         	return codeAndDateDescription("observation", observation.code, observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime);
         }
 
+        function mapAllergyIntolerance(allergyIntolerance) {
+        	// http://www.hl7.org/fhir/allergyintolerance.html
+        	var description = getCodeableConceptDisplayName(allergyIntolerance.substance) || "Unknown allergy";
+        	if (allergyIntolerance.onset) {
+        		description += " on ";
+        		description += getDisplayableDate(allergyIntolerance.onset);
+        	}
+        	if (allergyIntolerance.reaction) {
+        		var reactions = [];
+        		for (var i = 0; i < allergyIntolerance.reaction.length; i++) {
+        			if (allergyIntolerance.reaction[i].manifestation && allergyIntolerance.reaction[i].manifestation.length > 0) {
+        				reactions.push(getCodeableConceptDisplayName(allergyIntolerance.reaction[i].manifestation[0]));
+        			}
+        		}
+        		if (reactions.length > 0) {
+        			description += " reaction ";
+        			description += reactions.join("");
+        		}
+			}
+        	return description;
+        }
+
         function codeAndDateDescription(resourceDescription, codeableConcept, dateTime) {
         	var description = getCodeableConceptDisplayName(codeableConcept) || ("Unknown " + resourceDescription);
         	if (dateTime) {
@@ -678,12 +733,19 @@
             return appendParameter(parameters, parameterName, value);
         }
 
-        function appendDateSearchParameter(parameters, parameterName, value) {
+        function appendDateSearchParameter(parameters, parameterName, value, operator) {
             var parsedValue = parseDateSearchValue(value);
             if (!parsedValue) {
                 return parameters;
             }
             return appendParameter(parameters, parameterName, escapeFhirSearchParameter(parsedValue));
+        }
+
+        function appendNumberSearchParameter(parameters, parameterName, value, operator) {
+        	if (!value) {
+        		return parameters;
+        	}
+        	return appendParameter(parameters, parameterName, (operator || "") + escapeFhirSearchParameter(value));
         }
 
         function escapeFhirSearchParameter(value) {
@@ -750,6 +812,9 @@
                 detailsParts: filterEmptyAndFlatten([
 					genderDisplayName,
 					displayAgeOrDeceased,
+					getRaceDisplayName(patient),
+					getEthnicityDisplayName(patient),
+					getLastUpdatedDisplay(patient),
 					!patient.name || patient.name.constructor != Array || patient.name.length === 0 ?
 						null :
 						{
@@ -841,7 +906,7 @@
 					    parts: [". . ."],
 					    collapsed: true,
 					    load: function (onSuccess) {
-					    	getPatientResources(id, "MedicationOrder", mapMedicationOrder, onSuccess, "patient")
+					    	getPatientResources(id, "MedicationOrder", mapMedicationOrder, onSuccess)
 					    },
 					},
 					{
@@ -859,6 +924,14 @@
 					    load: function (onSuccess) {
 					    	getPatientResources(id, "Observation", mapObservation, onSuccess)
 					    },
+					},
+					{
+						header: "Allergies",
+						parts: [". . ."],
+						collapsed: true,
+						load: function (onSuccess) {
+							getPatientResources(id, "AllergyIntolerance", mapAllergyIntolerance, onSuccess)
+						},
 					},
                 ]),
             };
@@ -890,6 +963,9 @@
         }
 
         function getOfficialOrFirstName(patient) {
+        	if (!patient || !patient.name) {
+        		return null;
+        	}
             if (patient.name.constructor != Array) {
                 return patient.name;
             }
@@ -920,24 +996,66 @@
         	return patient.gender;
         }
 
-        function getCodeableConceptDisplayName(codeableConcept, codeMap) {
+        function getRaceDisplayName(patient) {
+        	var raceExtension = getExtension(patient, "http://hl7.org/fhir/StructureDefinition/us-core-race");
+        	if (!raceExtension) {
+        		return null;
+        	}
+        	return getCodeableConceptDisplayName(raceExtension.valueCodeableConcept, PDemoConfiguration.raceValues);
+        }
+
+        function getEthnicityDisplayName(patient) {
+        	var ethnicityExtension = getExtension(patient, "http://hl7.org/fhir/StructureDefinition/us-core-ethnicity");
+        	if (!ethnicityExtension) {
+        		return null;
+        	}
+        	return getCodeableConceptDisplayName(ethnicityExtension.valueCodeableConcept, PDemoConfiguration.ethnicityValues);
+        }
+
+        function getExtension(resource, url) {
+        	if (!resource || !resource.extension) {
+        		return null;
+        	}
+        	for (var i = 0; i<resource.extension.length; i++) {
+        		if (resource.extension[i].url === url) {
+        			return resource.extension[i];
+				}
+        	}
+        	return null;
+        }
+
+        function getLastUpdatedDisplay(resource) {
+        	if (!resource || !resource.meta || !resource.meta.lastUpdated) {
+        		return null;
+        	}
+        	return "Last updated on " + parseDateTime(resource.meta.lastUpdated).toLocaleString();
+        }
+
+        function getCodeableConceptDisplayName(codeableConcept, standardValues) {
             // See http://www.hl7.org/implement/standards/fhir/datatypes.html#codeableconcept
-            if (codeableConcept) {
+        	if (codeableConcept) {
+        		var coding = codeableConcept.coding;
+        		if (standardValues && coding && coding.length > 0) {
+        			for (var i = 0; i < coding.length; i++) {
+        				var currentCoding = coding[i];
+        				for (var j = 0; j < standardValues.length; j++) {
+        					var standardValue = standardValues[j];
+        					if (currentCoding.system === standardValue.uri && currentCoding.code === standardValue.code) {
+        						return standardValue.name;
+        					}
+        				}
+        			}
+        		}
                 if (codeableConcept.text) {
                     return firstUppercase(codeableConcept.text);
                 }
-                var coding = codeableConcept.coding;
                 if (coding && coding.length > 0) {
                     for (var i = 0; i < coding.length; i++) {
                         if (coding[i].display) {
                             return firstUppercase(coding[i].display);
                         }
                     }
-                    var code = coding[0].code;
-                    if (code && codeMap && (code.toLowerCase() in codeMap)) {
-                        return codeMap[code.toLowerCase()];
-                    }
-                    return code;
+                    return coding[0].code;
                 }
             }
             return null;
