@@ -845,15 +845,15 @@
 					!patient.address || patient.address.length === 0 ?
 						null :
                         patient.address.constructor != Array ?
-                        composeDisplayAddressLines(patient.address) :
-						patient.address.map(function (address) {
-						    return {
-						        header: joinNonEmpty(" - ", ["Address", address.use]),
-						        parts: composeDisplayAddressLines(address),
-						        collapsed: false,
-						        load: null,
-						    };
-						}),
+							composeDisplayAddressLines(patient.address) :
+							patient.address.map(function (address) {
+								return {
+									header: joinNonEmpty(" - ", ["Address", address.use]),
+									parts: composeDisplayAddressLines(address) || [],
+									collapsed: false,
+									load: null,
+								};
+							}),
 					!patient.identifier || patient.identifier.length === 0 ?
 						null :
 						{
@@ -861,7 +861,7 @@
 						    parts: patient.identifier.map(function (identifier) {
 						        // See http://www.hl7.org/implement/standards/fhir/datatypes.html#identifier
 						        return joinNonEmpty(" ", [
-									addPrefixSuffixNonEmpty("", identifier.label || getIdentifierSystemDisplayName(identifier.system, knownIdentifierSystems), ":"),
+									addPrefixSuffixNonEmpty("", (identifier.type ? identifier.type.text : null ) || getIdentifierSystemDisplayName(identifier.system, knownIdentifierSystems), ":"),
 									identifier.value,
 									addPrefixSuffixNonEmpty("[", identifier.use, "]"),
 						        ]);

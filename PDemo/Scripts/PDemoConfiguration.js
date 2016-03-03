@@ -8,11 +8,11 @@ var PDemoConfiguration = {
 	// Client identifier used by the OAuth2 protocol - it must be accepted by the OAuth2 authorization server
 	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
 	
-	version: "1.3",
+	version: "1.3.1",
 
 	fhirVersion: "DSTU 2",
 
-	copyrightYears: "2015",
+	copyrightYears: "2015 - 2016",
 
 	// Possible sorts
 	sorts: [
@@ -45,7 +45,7 @@ var PDemoConfiguration = {
 	},
 
 	defaultSearchIdentifierSystems: [
-		{ uri: "urn:oid:2.16.840.1.113883.4.1", name: "SSN" },
+		{ uri: "http://hl7.org/fhir/sid/us-ssn", name: "SSN" },
 	],
 
 	// See http://www.hl7.org/implement/standards/fhir/valueset-administrative-gender.html
@@ -75,11 +75,12 @@ var PDemoConfiguration = {
 		{ code: "ASKU", name: "Asked but no answer", uri: "http://hl7.org/fhir/v3/NullFlavor" },
 	],
 
-	// See http://www.hl7.org/implement/standards/fhir/terminologies-systems.html#identifiersystems
+	// See http://www.hl7.org/implement/standards/fhir/identifier-registry.html
 	knownIdentifierSystems: [
 		{ uri: "urn:ietf:rfc:3986", name: "" },	// no display name needed for a URL identifier
 		{ uri: "http://hl7.org/fhir/sid/us-ssn", name: "SSN" },
 		{ uri: "urn:oid:2.16.840.1.113883.4.1", name: "SSN" },
+		{ uri: "http://hl7.org/fhir/sid/us-npi", name: "NPI" },
 		{ uri: "urn:oid:2.16.840.1.113883.4.3.2", name: "Driver's license - AK" },
 		{ uri: "urn:oid:2.16.840.1.113883.4.3.1", name: "Driver's license - AL" },
 		{ uri: "urn:oid:2.16.840.1.113883.4.3.5", name: "Driver's license - AR" },
