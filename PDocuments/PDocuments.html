@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+
+<!--
+ * Copyright (c) 2016, CareEvolution Inc (info@careevolution.com)
+ *
+ * This file is licensed under the MIT License - see License.txt
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+	<title>PDocuments</title>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+    <script src="Scripts/SmartApps.js"></script>
+    <script src="Scripts/ClassCodes.js"></script>
+    <script src="Scripts/SecurityCodes.js"></script>
+    <script src="Scripts/FacilityCodes.js"></script>
+    <script src="Scripts/FormatCodes.js"></script>
+	<script src="Scripts/PDocuments.js"></script>
+
+	<link rel="stylesheet" href="PDocuments.css" />
+</head>
+<body ng-app="PDocumentsApp" ng-controller="PDocumentsController">
+
+    <div class="alert alert-danger" role="alert" ng-show="StartupErrorMessage">
+        {{ StartupErrorMessage }}
+    </div>
+
+	<div class="container-fluid full-height">
+
+		<div class="row full-height">
+
+            <div class="results col-md-4">
+
+                <div class="result" ng-repeat="document in Documents" ng-click="select(document)" ng-class="{'result-selected': isSelected(document)}">
+                    <div class="result-header">
+                        {{ document.description }}
+                    </div>
+                    <div class="result-body">
+                        <div>{{ document.type }}</div>
+                        <div>{{ document.created }}</div>
+                    </div>
+                </div>
+
+                <div class="results-footer">
+                    <div class="alert alert-warning" role="alert" ng-show="SearchErrorMessage">
+                        <button type="button" class="close" ng-click="dismissSearchErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        {{ SearchErrorMessage }}
+                    </div>
+                    <button class="btn btn-success" ng-click="searchNext()" ng-show="NextDocumentsSearchUrl" ng-disabled="Searching">More</button>
+                    <div ng-show="Searching">
+                        <img src="Images/CircularProgressAnimation.gif" width="32" />
+                        Searching...
+                    </div>
+                    <div ng-show="!SearchErrorMessage">
+                        {{ getDocumentsCountDescription() }}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="details col-md-7">
+
+                <ul class="nav nav-pills nav-stacked col-sm-2 col-sm-push-10">
+                    <li class="active">
+                        <a href="#tab-details" data-toggle="tab">Details</a>
+                    </li>
+                    <li>
+                        <a href="#tab-create" data-toggle="tab">Create</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content col-sm-10  col-sm-pull-2">
+                    <div id="tab-details" class="tab-pane active">
+                        <div class="details-empty" ng-show="!SelectedDocument">
+                            No document selected
+                        </div>
+                        <div class="details-header" ng-show="SelectedDocument">
+                            {{ SelectedDocument.description }}
+                        </div>
+                        <dl class="details-body" ng-show="SelectedDocument">
+
+                            <dt ng-repeat-start="detail in SelectedDocument.details">{{detail.title}}</dt>
+                            <dd ng-repeat-end>
+                                {{detail.value}}
+                                <div ng-show="detail.data">
+                                    <a href="{{detail.dataUrl}}" download="{{SelectedDocument.description}}">Download</a>
+                                    <!--<button class="btn btn-primary" ng-click="download(detail.data, detail.contentType)">Download</button>-->
+                                </div>
+                                <div class="detail-property" ng-repeat="(key, value) in detail.properties">{{key}}:&nbsp;<code>{{value}}</code></div>
+                            </dd>
+
+                        </dl>
+                    </div>
+
+                    <div id="tab-create" class="tab-pane">
+
+                        <form name="createForm" role="form" novalidate>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.identifier.$invalid}">
+                                <label for="identifier">Identifier:</label>
+                                <input id="identifier" name="identifier" type="text" class="form-control" placeholder="OID" ng-model="Identifier" ng-pattern="/^\d+(\.\d+)+$/" required />
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.identifier.$error.required">Required</span>
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.identifier.$error.pattern">Not a valid OID</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="description">Description:</label>
+                                <input id="description" name="description" type="text" class="form-control" ng-model="Description" />
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.created.$invalid}">
+                                <label for="created">Creation date/time (defaults to current date/time):</label>
+                                <input id="created" name="created" type="datetime-local" placeholder="yyyy-MM-ddTHH:mm:ss" class="form-control" ng-model="Created" />
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.created.$error.datetimelocal">Not a valid date/time</span>
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && (createForm.typeCode.$invalid || createForm.typeDisplay.$invalid || createForm.typeSystem.$invalid) }">
+                                <label for="typeCode">Type:</label>
+                                <input id="typeCode" name="typeCode" type="text" class="form-control" placeholder="Code" ng-model="TypeCode" required />
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.typeCode.$error.required">Required</span>
+                                <input id="typeDisplay" name="typeDisplay" type="text" class="form-control" placeholder="Display" ng-model="TypeDisplay" />
+                                <input id="typeSystem" name="typeSystem" type="text" class="form-control" placeholder="System" ng-model="TypeSystem" required/>
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.typeSystem.$error.required">Required</span>
+                                <span class="help-block">See <a href="http://hl7.org/fhir/2016Sep/valueset-c80-doc-typecodes.html" target="_blank">here</a></span>
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.class.$invalid }">
+                                <label for="class">Class:</label>
+                                <select id="class" name="class" class="form-control" ng-model="Class" ng-options="code.value as code.text for code in ClassCodes" required></select>
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.class.$error.required">Required</span>
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.security.$invalid }">
+                                <label for="security">Confidentiality:</label>
+                                <select id="security" name="security" class="form-control" ng-model="SecurityLabel" ng-options="code.value as code.text for code in SecurityCodes" required></select>
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.security.$error.required">Required</span>
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.facility.$invalid }">
+                                <label for="facility">Facility type:</label>
+                                <select id="facility" name="facility" class="form-control" ng-model="FacilityType" ng-options="code.value as code.text for code in FacilityCodes" required></select>
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.facility.$error.required">Required</span>
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.file.$invalid }">
+                                <label for="file">Data:</label>
+                                <input id="file" name="file" type="file" class="form-control" fileread="File" ng-model="File" required />
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.file.$error.required">Required</span>
+                            </div>
+
+                            <div class="form-group" ng-class="{'has-error': createForm.$submitted && createForm.format.$invalid }">
+                                <select id="format" name="format" class="form-control" ng-model="Format" ng-options="code.value as code.text for code in FormatCodes" required></select>
+                                <span class="help-block" ng-show="createForm.$submitted && createForm.format.$error.required">Required</span>
+                            </div>
+
+                            <button type="submit" class="btn btn-success" ng-click="create()">Create</button>
+
+                        </form>
+
+                        <div class="alert alert-warning" role="alert" ng-show="CreateErrorMessage">
+                            <button type="button" class="close" ng-click="dismissCreateErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                            {{ CreateErrorMessage }}
+                        </div>
+                        <div ng-show="Creating">
+                            <img src="Images/CircularProgressAnimation.gif" width="32" />
+                            Creating document...
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+		</div>
+
+	</div>
+
+</body>
+</html>

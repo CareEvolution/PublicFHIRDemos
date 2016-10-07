@@ -1,0 +1,106 @@
+﻿/* 
+ * Copyright (c) 2016, CareEvolution Inc (mimo@careevolution.com)
+ * 
+ * This file is licensed under the BSD 3-Clause license - see License.txt
+ */
+
+/*
+ * Base structure
+ */
+
+html, body
+{
+	height: 100%;
+}
+
+.full-height 
+{
+	height: 100%;
+}
+
+.logo
+{
+	border-top: 1px solid #eee; 
+	padding-left: 10px;
+	padding-top: 5px;
+}
+
+.results
+{
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+}
+
+.results-footer
+{
+	padding: 10px;
+	border-top: 1px solid #eee;
+	font-style: italic;
+}
+
+	.results-footer button
+	{
+		float: right;
+		font-style: normal;
+		margin-left: 5px;
+	}
+
+.result
+{
+	margin: 0.3em;
+	cursor: pointer;
+}
+
+.result-selected
+{
+	background-color: #ffc;
+}
+
+.result-header
+{
+	font-weight: bold;
+}
+
+.result-body
+{
+	font-size: small;
+}
+
+.tab-content
+{
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+	border-right: 1px solid #eee; 
+}
+
+.details
+{
+	padding-left: 10px;
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+	border-left: 1px solid #eee;
+}
+
+.details-empty
+{
+	font-style: italic;
+}
+
+.details-header
+{
+	font-weight: bold;
+	font-size: large;
+}
+
+.details-body dd
+{
+	padding-left: 1em;
+}
+
+.detail-property
+{
+	font-size: small;
+}
