@@ -11,6 +11,7 @@
 	var PDocumentsApp = angular.module("PDocumentsApp", ["SmartApps"]);
 
 	PDocumentsApp.config(["$compileProvider", function($compileProvider) {
+		// Needed to be able to generate 'data:' HREFs
 		$compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|file|blob|data):/);
 	}]);
 
@@ -180,16 +181,6 @@
         	return $scope.SelectedDocument === document;
         };
 
-        $scope.download = function(data, contentType) {
-        	var blob = b64toBlob(data, contentType || "application/octet-stream");
-        	if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        		window.navigator.msSaveOrOpenBlob(blob);
-        	} else {
-        		var blobUrl = URL.createObjectURL(blob);
-        		window.location = blobUrl;
-        	} 
-        };
-
         $scope.getDocumentsCountDescription = function() {
         	if (!$scope.Documents || $scope.Documents.length === 0) {
         		return "No results";
@@ -269,30 +260,6 @@
         	return null;
         }
 
-        function b64toBlob(b64Data, contentType, sliceSize) {
-        	contentType = contentType || '';
-        	sliceSize = sliceSize || 512;
-
-        	var byteCharacters = atob(b64Data);
-        	var byteArrays = [];
-
-        	for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-        		var slice = byteCharacters.slice(offset, offset + sliceSize);
-
-        		var byteNumbers = new Array(slice.length);
-        		for (var i = 0; i < slice.length; i++) {
-        			byteNumbers[i] = slice.charCodeAt(i);
-        		}
-
-        		var byteArray = new Uint8Array(byteNumbers);
-
-        		byteArrays.push(byteArray);
-        	}
-
-        	var blob = new Blob(byteArrays, { type: contentType });
-        	return blob;
-        }
-
         function createDocument(documentManifest) {
         	var document = {};
         	var identifier = removePrefix(documentManifest.masterIdentifier.value, "urn:oid:");
@@ -323,10 +290,14 @@
         			}
         			var attachment = content.attachment;
         			if (attachment) {
-        				detail.data = attachment.data;
-        				detail.contentType = attachment.contentType;
-        				var mimeType = attachment.contentType || "application/octet-stream";
-        				detail.dataUrl =  "data:" + mimeType + ";base64," + attachment.data;
+        				if (attachment.data) {
+        					var mimeType = attachment.contentType || "application/octet-stream";
+        					detail.dataUrl = "data:" + mimeType + ";base64," + attachment.data;
+        					detail.dataFileName = (documentManifest.description || "data");
+        					if (documentManifest.content.length > 1) {
+        						detail.dataFileName += "_" + i;
+							}
+        				}
         				if (attachment.contentType) {
         					detail.properties["Content type"] = attachment.contentType;
         				}

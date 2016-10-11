@@ -94,9 +94,8 @@
                             <dt ng-repeat-start="detail in SelectedDocument.details">{{detail.title}}</dt>
                             <dd ng-repeat-end>
                                 {{detail.value}}
-                                <div ng-show="detail.data">
-                                    <a href="{{detail.dataUrl}}" download="{{SelectedDocument.description}}">Download</a>
-                                    <!--<button class="btn btn-primary" ng-click="download(detail.data, detail.contentType)">Download</button>-->
+                                <div ng-show="detail.dataUrl">
+                                    <a href="{{detail.dataUrl}}" download="{{detail.dataFileName}}">Download</a>
                                 </div>
                                 <div class="detail-property" ng-repeat="(key, value) in detail.properties">{{key}}:&nbsp;<code>{{value}}</code></div>
                             </dd>
