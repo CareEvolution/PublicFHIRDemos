@@ -1,0 +1,170 @@
+﻿/* 
+ * Copyright (c) 2015, CareEvolution Inc (mimo@careevolution.com)
+ * 
+ * This file is licensed under the BSD 3-Clause license - see License.txt
+ */
+
+/*
+ * Base structure
+ */
+
+html, body
+{
+	height: 100%;
+}
+
+/* Move down content because we have a fixed navbar that is 50px tall */
+body
+{
+	padding-top: 50px;
+}
+
+/*
+ * Top navigation
+ * Hide default border to remove 1px line.
+ */
+.navbar-fixed-top
+{
+	border: 0;
+}
+
+.full-height 
+{
+	height: 100%;
+}
+
+.border-top
+{
+	border-top: 1px solid #eee;
+}
+
+.results
+{
+	position: absolute;
+	top: 40px;	/* Space for the heading */
+	bottom: 0px;  /* Extend to bottom */
+	left: 0;
+	right: 0;
+	height: auto;
+	padding: 10px;
+	overflow-x: hidden;
+	overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
+}
+
+.results-footer
+{
+	padding: 10px;
+	font-style: italic;
+}
+
+	.results-footer button
+	{
+		float: right;
+		font-style: normal;
+		margin-left: 5px;
+	}
+
+.result
+{
+	margin: 0.3em;
+}
+
+	.result.selectable
+	{
+		cursor: pointer;
+	}
+
+	.result.selected
+	{
+		background-color: #ffc;
+	}
+
+	.result > .header
+	{
+		font-weight: bold;
+	}
+
+	.result  >.body
+	{
+		font-size: small;
+	}
+
+.no-patient
+{
+	padding: 10px;
+	font-style: italic;
+}
+
+	.no-patient:before
+	{
+		content: "No patient selected"
+	}
+
+.column
+{
+	padding: 0;
+	height: 100%;
+	overflow-x: hidden;
+	overflow-y: hidden;
+}
+
+	.column > .header
+	{
+		border-bottom: 1px solid #eee;
+	}
+
+		.column > .header > span
+		{
+			padding: 10px;
+			display: inline-block;
+			margin-bottom: -1px;
+			background-color: white;
+			border-left: 1px solid #eee;
+			border-top: 1px solid #eee;
+			border-right: 1px solid #eee;
+			border-radius: 4px;
+			border-bottom: none;
+		}
+
+.patients
+{
+	border-right: 1px solid #eee;
+}
+
+	.patients form
+	{
+		padding: 10px;
+	}
+
+	.patients .logo
+	{
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border-top: 1px solid #eee; 
+		padding: 5px 0 5px 10px;
+	}
+
+	.patients .results
+	{
+		top: 190px;	/* Space for the search form */
+		bottom: 40px;	/* Space for the logo */
+		padding: 10px;
+		border-top: 1px solid #eee; 
+	}
+
+.communications
+{
+
+}
+
+.requests
+{
+	border-left: 1px solid #eee;
+}
+
+	.requests form
+	{
+		padding: 10px;
+	}

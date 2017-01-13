@@ -1,0 +1,244 @@
+﻿<!DOCTYPE html>
+
+<!--
+ * Copyright (c) 2017, CareEvolution Inc (info@careevolution.com)
+ *
+ * This file is licensed under the MIT License - see License.txt
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+	<title>FHIR Communicator</title>
+
+	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+	<script src="Scripts/scrollglue.js"></script>
+	<script src="Scripts/SmartApps.js"></script>
+	<script src="Scripts/CommunicatorConfiguration.js"></script>
+	<script src="Scripts/Communicator.js"></script>
+
+	<link rel="stylesheet" href="Communicator.css" />
+</head>
+<body ng-app="CommunicatorApp" ng-controller="CommunicatorController">
+
+	<div class="alert alert-danger" role="alert" ng-show="StartupErrorMessage">
+		{{ StartupErrorMessage }}
+	</div>
+
+	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#avba">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="http://careevolution.com" target="_blank" title="{{ getProductDescription() }}">FHIR Communicator</a>
+			</div>
+			<div id="navbar" class="navbar-collapse collapse">
+				<div class="navbar-right" ng-show="getFhirUrl()">
+					<p class="navbar-text">Connected to: {{ getFhirUrl() }}</p>
+				</div>
+			</div><!--/.navbar-collapse -->
+		</div>
+	</nav>
+
+	<div class="container-fluid full-height">
+
+		<div class="row full-height">
+
+			<div class="column patients col-md-3">
+
+				<div class="header">
+					<span>Patient</span>
+				</div>
+
+				<form name="searchForm" role="form">
+
+					<div class="form-group">
+						<label for="name">Name</label>
+						<input id="name" name="name" type="text" class="form-control" ng-model="Name" />
+						<div>
+							<select ng-model="NameOperator">
+								<option value="">Starts with</option>
+								<option value="contains">Contains</option>
+								<option value="exact">Exact</option>
+							</select>
+						</div>
+					</div>
+
+					<button type="submit" class="btn btn-success" ng-click="search('Patient')" ng-disabled="searchDisabled()">Search</button>
+
+				</form>
+
+				<div class="results" scroll-glue>
+					<div class="result selectable" ng-repeat="patient in Patients" ng-click="select(patient)" ng-class="{'selected': patient===SelectedPatient}">
+						<div class="header">
+							{{ patient.resultHeader }}
+						</div>
+						<div class="body">
+							<ul class="list-unstyled">
+								<li ng-repeat="line in patient.resultLines">{{ line }}</li>
+							</ul>
+						</div>
+					</div>
+					<div class="results-footer" ng-class="{'border-top': Patients.length}">
+						<div class="alert alert-warning" role="alert" ng-show="SearchErrorMessage">
+							<button type="button" class="close" ng-click="dismissSearchErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+							{{ SearchErrorMessage }}
+						</div>
+						<button class="btn btn-success" ng-click="searchNext()" ng-show="NextPatientsSearchUrl" ng-disabled="searchDisabled()">More</button>
+						<div ng-show="Searching">
+							<img src="Images/CircularProgressAnimation.gif" width="32" />
+							Searching...
+						</div>
+						<div ng-show="!SearchErrorMessage">
+							{{ getPatientsCountDescription() }}
+						</div>
+					</div>
+				</div>
+
+				<div class="logo">
+					<a href="http://careevolution.com" target="_blank">
+						<img src="Images/CareEv-logo-small.png" title="FHIR Communicator - Copyright © 2017 CareEvolution Inc." />
+					</a>
+				</div>
+
+			</div>
+
+			<div class="column communications col-md-3">
+
+				<div class="header">
+					<span>Communications</span>
+				</div>
+
+				<div class="results" scroll-glue ng-show="SelectedPatient">
+					<div class="result" ng-repeat="communication in Communications">
+						<div class="header">
+							{{ communication.resultHeader }}
+						</div>
+						<div class="body">
+							<ul class="list-unstyled">
+								<li ng-repeat="line in communication.resultLines">{{ line }}</li>
+								<li ng-if="communication.dataUrl">
+									<a href="{{communication.dataUrl}}" download="{{communication.dataFileName}}">Download</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+					<div class="results-footer" ng-class="{'border-top': Communications.length}">
+						<div class="alert alert-warning" role="alert" ng-show="SearchCommunicationErrorMessage">
+							<button type="button" class="close" ng-click="dismissSearchCommunicationErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+							{{ SearchCommunicationErrorMessage }}
+						</div>
+						<button class="btn btn-success" ng-click="searchNextCommunications()" ng-show="NextCommunicationsSearchUrl" ng-disabled="searchCommunicationDisabled()">More</button>
+						<div ng-show="SearchingCommunications">
+							<img src="Images/CircularProgressAnimation.gif" width="32" />
+							Searching...
+						</div>
+						<div ng-show="!SearchCommunicationsErrorMessage">
+							{{ getCommunicationsCountDescription() }}
+						</div>
+					</div>
+				</div>
+
+				<div class="no-patient" ng-show="!SelectedPatient"></div>
+
+			</div>
+
+			<div class="column requests col-md-6">
+
+				<ul class="nav nav-tabs">
+					<li class="active">
+						<a href="#tab-send-request" data-toggle="tab">Send request</a>
+					</li>
+					<li>
+						<a href="#tab-requests" data-toggle="tab">Requests</a>
+					</li>
+				</ul>
+
+				<div class="tab-content">
+					<div id="tab-send-request" class="tab-pane active">
+
+						<form name="sendRequestForm" role="form" novalidate ng-show="SelectedPatient">
+
+							<div class="form-group" ng-class="{'has-error': sendRequestForm.$submitted && sendRequestForm.from.$invalid }">
+								<label for="from">From:</label>
+								<select id="from" name="from" class="form-control"
+										ng-model="Request.From"
+										ng-options="organization.id as organization.display for organization in Organizations"
+										required>
+									<option value="">&lt;Select sender&gt;</option>
+								</select>
+								<span class="help-block" ng-show="sendRequestForm.$submitted && sendRequestForm.from.$error.required">Required</span>
+							</div>
+
+							<div class="form-group" ng-class="{'has-error': sendRequestForm.$submitted && sendRequestForm.to.$invalid }">
+								<label for="to">To:</label>
+								<select id="to" name="to" class="form-control"
+										ng-model="Request.To"
+										ng-options="organization.id as organization.display for organization in Organizations"
+										required>
+									<option value="">&lt;Select recipient&gt;</option>
+								</select>
+								<span class="help-block" ng-show="sendRequestForm.$submitted && sendRequestForm.to.$error.required">Required</span>
+							</div>
+
+							<div class="form-group" ng-class="{'has-error': sendRequestForm.$submitted && sendRequestForm.content.$invalid }">
+								<label for="content">Message:</label>
+								<input id="content" name="content" type="text" class="form-control" ng-model="Request.Content" required />
+								<span class="help-block" ng-show="sendRequestForm.$submitted && sendRequestForm.content.$error.required">Required</span>
+							</div>
+
+							<div class="form-group">
+								<label for="claim">Claim:</label>
+								<select id="claim" class="form-control"
+										ng-model="Request.Claim"
+										ng-options="claim.id as claim.display for claim in Claims">
+									<option value="">&lt;None&gt;</option>
+								</select>
+							</div>
+
+							<button type="submit" class="btn btn-success" ng-click="sendRequest()">Send</button>
+
+						</form>
+
+						<div class="results-footer border-top" ng-show="SelectedPatient">
+							<div class="alert" role="alert" ng-show="SendRequestMessage" ng-class="{'alert-warning': SendRequestFailed, 'alert-success': !SendRequestFailed}">
+								<button type="button" class="close" ng-click="dismissSendRequestMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+								{{ SendRequestMessage }}
+							</div>
+							<div ng-show="SendingRequest">
+								<img src="Images/CircularProgressAnimation.gif" width="32" />
+								Sending request...
+							</div>
+						</div>
+
+						<div class="no-patient" ng-show="!SelectedPatient"></div>
+
+					</div>
+
+					<div id="tab-requests" class="tab-pane">
+						<div class="no-patient" ng-show="!SelectedPatient"></div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+</body>
+</html>
