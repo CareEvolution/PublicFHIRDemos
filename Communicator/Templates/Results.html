@@ -1,0 +1,29 @@
+﻿<div class="results" scroll-glue>
+	<div class="result" ng-repeat="item in info.Items" ng-click="select(item)" ng-class="{'selectable': select, 'selected': item==selectedItem}">
+		<div class="header">
+			{{ item.resultHeader }}
+		</div>
+		<div class="body">
+			<ul class="list-unstyled">
+				<li ng-repeat="line in item.resultLines">{{ line }}</li>
+				<li ng-if="item.dataUrl">
+					<a href="{{item.dataUrl}}" download="{{item.dataFileName}}">Download</a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div class="results-footer" ng-class="{'border-top': info.Items.length}">
+		<div class="alert alert-warning" role="alert" ng-show="info.ErrorMessage">
+			<button type="button" class="close" ng-click="dismissErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+			{{ info.ErrorMessage }}
+		</div>
+		<button class="btn btn-success" ng-click="searchNext(info.NextSearchUrl)" ng-show="info.NextSearchUrl" ng-disabled="info.Searching">More</button>
+		<div ng-show="info.Searching">
+			<img src="Images/CircularProgressAnimation.gif" width="32" />
+			Searching...
+		</div>
+		<div ng-show="!info.ErrorMessage">
+			{{ getCountDescription() }}
+		</div>
+	</div>
+</div>
