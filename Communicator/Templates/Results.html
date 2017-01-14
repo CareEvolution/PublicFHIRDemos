@@ -1,4 +1,9 @@
 ﻿<div class="results" scroll-glue>
+	<div style="float: right" ng-show="refresh">
+		<button class="btn btn-default" title="Refresh" ng-click="refresh()">
+			<span class="glyphicon glyphicon-refresh"></span>&nbsp;
+		</button>
+	</div>
 	<div class="result" ng-repeat="item in info.Items" ng-click="select(item)" ng-class="{'selectable': select, 'selected': item==selectedItem}">
 		<div class="header">
 			{{ item.resultHeader }}
@@ -22,7 +27,7 @@
 			<img src="Images/CircularProgressAnimation.gif" width="32" />
 			Searching...
 		</div>
-		<div ng-show="!info.ErrorMessage">
+		<div ng-show="!info.ErrorMessage && !info.Searching">
 			{{ getCountDescription() }}
 		</div>
 	</div>

@@ -22,9 +22,10 @@
     CommunicatorApp.directive("ceResults", function() {
     	return {
     		scope: {
-    			info: "=info",
-    			searchNext: "=searchNext",
-				select: "=select"
+    			info: "=",
+    			searchNext: "=",
+    			select: "=",
+				refresh: "="
     		},
 
     		templateUrl: "Templates/Results.html",
@@ -72,6 +73,7 @@
 
         $scope.Patients = emptyResultsInfo();
         $scope.SelectedPatient = null;
+        $scope.SelectedRequest = null;
 
         $scope.Claims = [];
 
@@ -95,7 +97,14 @@
 			CommunicatorConfiguration.clientID,
 			function(url) {
 				fhirUrl = url;
-				loadAll(fhirUrl + "/Organization", "Load organizations", appendOrganization);
+				loadAll(
+					fhirUrl + "/Organization",
+					appendOrganization,
+					null,
+					function(data, status) {
+						$scope.StartupErrorMessage = httpErrorMessage("Load organizations", data, status);
+					}
+				);
 			},
 			function(errorMessage) {
 				$scope.StartupErrorMessage = errorMessage;
@@ -118,43 +127,80 @@
             parameters = appendParameter(parameters, "_count", CommunicatorConfiguration.defaultResultsPerPage);
             var searchUrl = fhirUrl + "/" + resource + parameters;
             $scope.Patients = emptyResultsInfo();
-            $scope.select(null);
+            $scope.selectPatient(null);
             doSearch(searchUrl, $scope.Patients, createPatient);
-        };
-
-        $scope.loadPatient = function() {
-        	$scope.Communications = emptyResultsInfo();
-        	$scope.Requests = emptyResultsInfo();
-        	$scope.Claims = [];
-        	if ($scope.SelectedPatient) {
-        		doSearch(createSearchByPatientUrl("Communication", "received"), $scope.Communications, createCommunication);
-
-        		doSearch(createSearchByPatientUrl("CommunicationRequest", "requested"), $scope.Requests, createRequest);
-
-        		var parameters = "";
-        		parameters = appendParameter(parameters, "patient", "Patient/" + $scope.SelectedPatient.id);
-        		searchUrl = fhirUrl + "/Claim" + parameters;
-        		loadAll(searchUrl, "Load claims", appendClaim);
-        	}
         };
 
         $scope.searchNextPatients = function(nextSearchUrl) {
         	doSearch(nextSearchUrl, $scope.Patients, createPatient);
         };
 
+        $scope.loadPatient = function() {
+        	$scope.Communications = emptyResultsInfo();
+        	$scope.Requests = emptyResultsInfo();
+        	$scope.SelectedRequest = null;
+        	$scope.Claims = [];
+        	if ($scope.SelectedPatient) {
+        		doSearch(createSearchByPatientUrl("Communication", "sent"), $scope.Communications, createCommunication);
+
+        		doSearch(createSearchByPatientUrl("CommunicationRequest", "requested"), $scope.Requests, createRequest);
+
+        		var parameters = "";
+        		parameters = appendParameter(parameters, "patient", "Patient/" + $scope.SelectedPatient.id);
+        		searchUrl = fhirUrl + "/Claim" + parameters;
+        		loadAll(
+					searchUrl,
+					appendClaim,
+					null,
+					function(data, status) {
+						$scope.Communications.ErrorMessage = httpErrorMessage("Load claims", data, status);
+					}
+				);
+        	}
+        };
+
         $scope.searchNextCommunications = function(nextSearchUrl) {
         	doSearch(nextSearchUrl, $scope.Communications, createCommunication);
+        };
+
+        $scope.refreshCommunications = function() {
+        	$scope.Communications = emptyResultsInfo();
+        	if ($scope.SelectedPatient) {
+        		var searchUrl = createSearchByPatientUrl("Communication", "sent");
+        		if ($scope.SelectedRequest) {
+        			searchUrl = appendParameter(searchUrl, "based-on", "CommunicationRequest/" + $scope.SelectedRequest.id);
+        		}
+        		doSearch(searchUrl, $scope.Communications, createCommunication);
+        	}
         };
 
         $scope.searchNextRequests = function(nextSearchUrl) {
         	doSearch(nextSearchUrl, $scope.Requests, createRequest);
         };
 
-        $scope.select = function(patient) {
+        $scope.refreshRequests = function() {
+        	if ($scope.SelectedRequest) {
+        		$scope.SelectedRequest = null;
+        		$scope.refreshCommunications();
+        	}
+        	$scope.Requests = emptyResultsInfo();
+        	if ($scope.SelectedPatient) {
+        		doSearch(createSearchByPatientUrl("CommunicationRequest", "requested"), $scope.Requests, createRequest);
+        	}
+        };
+
+        $scope.selectPatient = function(patient) {
         	if (patient != $scope.SelectedPatient) {
         		$scope.SelectedPatient = patient;
         		$scope.loadPatient();
         	}
+        };
+
+        $scope.selectRequest = function(request) {
+        	if (request != $scope.SelectedRequest) {
+        		$scope.SelectedRequest = request;
+        		$scope.refreshCommunications();
+			}
         };
 
         $scope.sendRequest = function() {
@@ -203,9 +249,9 @@
         		method: "POST",
         		data: request,
         		headers: getHeaders(),
-        	}).success(function(data) {
+        	}).success(function(data, status, headers) {
         		$scope.SendingRequest = false;
-        		$scope.SendRequestMessage = "Request sent";
+        		$scope.SendRequestMessage = "Request sent (" + headers("Location") + ")";
         		$scope.SendRequestFailed = false;
         		$scope.Request = {
 					From: $scope.Request.From
@@ -213,6 +259,7 @@
         		$scope.sendRequestForm.$setUntouched();
         		$scope.sendRequestForm.$setPristine();
         		$scope.Requests = emptyResultsInfo();
+        		$scope.SelectedRequest = null;
         		doSearch(createSearchByPatientUrl("CommunicationRequest", "requested"), $scope.Requests, createRequest);
         	}).error(function(data, status) {
         		$scope.SendingRequest = false;
@@ -319,21 +366,18 @@
         	organizations.splice(index, 0, organization);
         }
 
-        function loadAll(url, operation, processResource) {
-        	$scope.SearchCommunicationErrorMessage = null;
-        	$scope.SearchingCommunications = true;
+        function loadAll(url, processResource, onCompletion, onError) {
         	load(
 				url,
 				processResource,
 				function(total, nextPageUrl) {
 					if (nextPageUrl) {
-						loadAll(nextPageUrl, operation, processResource);
+						loadAll(nextPageUrl, processResource, onCompletion, onError);
+					} else if (onCompletion) {
+						onCompletion();
 					}
 				},
-				function(data, status) {
-					$scope.SearchingCommunications = false;
-					$scope.SearchCommunicationsErrorMessage = httpErrorMessage(operation, data, status);
-				}
+				onError
 			);
         }
 
@@ -348,9 +392,13 @@
         				processResource(data.entry[i].resource);
         			}
         		}
-        		processTotalAndNextPageUrl(data.total, getLinkHRef(data, "next"));
+        		if (processTotalAndNextPageUrl) {
+        			processTotalAndNextPageUrl(data.total, getLinkHRef(data, "next"));
+        		}
         	}).error(function(data, status) {
-        		onError(data, status);
+        		if (onError) {
+        			onError(data, status);
+        		}
         	});
         }
 
@@ -488,28 +536,93 @@
         }
 
         function createCommunication(communication) {
-        	var attachment = communication.payload[0].contentAttachment;
+			var result = processPayloads(communication.payload);
+			result.id = communication.id;
+			result.resultLines = [];
+			if (communication.status) {
+				result.resultLines.push("Status: " + communication.status);
+			}
+			if (communication.sent) {
+				result.resultLines.push("Sent on: " + communication.sent);
+			}
+			var sender = processReference(communication.sender);
+			if (sender) {
+				result.resultLines.push("From: " + sender);
+			}
+			if (communication.recipient) {
+				var recipients = joinNonEmpty(", ", communication.recipient.map(processReference));
+				if (recipients) {
+					result.resultLines.push("To: " + recipients);
+				}
+			}
+			return result;
+        }
+
+        function createRequest(request) {
+        	var result = processPayloads(request.payload);
+        	result.id = request.id;
+        	result.resultLines = [];
+        	if (request.status) {
+        		result.resultLines.push("Status: " + request.status);
+        	}
+        	if (request.requestedOn) {
+        		result.resultLines.push("Requested on: " + request.requestedOn);
+        	}
+        	var sender = processReference(request.sender);
+        	if (sender) {
+        		result.resultLines.push("From: " + sender);
+        	}
+        	if (request.recipient) {
+        		var recipients = joinNonEmpty( ", ", request.recipient.map(processReference) );
+        		if (recipients) {
+        			result.resultLines.push("To: " + recipients);
+        		}
+			}
+        	return result;
+        }
+
+        function processPayloads(payloads) {
+        	if (!payloads || payloads.length == 0) {
+        		return {
+        			resultHeader: "?",
+        			dataUrl: null
+        		}
+        	}
+        	var payload = payloads[0];
+        	if (payload.contentString) {
+        		return {
+        			resultHeader: payload.contentString,
+        			dataUrl: null
+        		}
+        	}
+        	var attachment = payload.contentAttachment;
+        	if (!attachment) {
+        		return {
+        			resultHeader: "?",
+        			dataUrl: null
+        		}
+        	}
+        	var display = attachment.title || "data";
         	var result = {
-				id: communication.id,
-        		resultHeader: attachment.title,
-        		resultLines: []
-        	};
+        		resultHeader: attachment.title || "data",
+        		dataUrl: null
+	        };
         	if (attachment.data) {
         		var mimeType = attachment.contentType || "application/octet-stream";
         		result.dataUrl = "data:" + mimeType + ";base64," + attachment.data;
         		result.dataFileName = (attachment.title || "data");
         	}
         	return result;
-        }
+		}
 
-        function createRequest(request) {
-        	var message = request.payload[0].contentString;
-        	var result = {
-        		id: request.id,
-        		resultHeader: message,
-        		resultLines: []
-        	};
-        	return result;
+        function processReference(reference) {
+        	if (!reference) {
+        		return null;
+        	}
+        	if (reference.display) {
+        		return reference.display;
+        	}
+        	return reference.reference;
         }
 
         function getOfficialOrFirstName(patient) {

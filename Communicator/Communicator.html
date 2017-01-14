@@ -16,12 +16,12 @@
 
 	<title>FHIR Communicator</title>
 
-	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
 
-	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
 
-	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
-	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
 
 	<script src="Scripts/scrollglue.js"></script>
 	<script src="Scripts/SmartApps.js"></script>
@@ -79,11 +79,11 @@
 						</div>
 					</div>
 
-					<button type="submit" class="btn btn-success" ng-click="searchPatients('Patient')" ng-disabled="searchDisabled()">Search</button>
+					<button type="submit" class="btn btn-success" ng-click="searchPatients('Patient')" ng-disabled="StartupErrorMessage">Search</button>
 
 				</form>
 
-				<ce-results info="Patients" search-next="searchNextPatients" select="select"></ce-results>
+				<ce-results info="Patients" search-next="searchNextPatients" select="selectPatient"></ce-results>
 
 				<div class="logo">
 					<a href="http://careevolution.com" target="_blank">
@@ -99,7 +99,7 @@
 					<span>Communications</span>
 				</div>
 
-				<ce-results info="Communications" search-next="searchNextCommunications" ng-show="SelectedPatient"></ce-results>
+				<ce-results info="Communications" search-next="searchNextCommunications" refresh="refreshCommunications" ng-show="SelectedPatient"></ce-results>
 
 				<div class="no-patient" ng-show="!SelectedPatient"></div>
 
@@ -178,7 +178,7 @@
 					</div>
 
 					<div id="tab-requests" class="tab-pane">
-						<ce-results info="Requests" search-next="searchNextRequests" ng-show="SelectedPatient"></ce-results>
+						<ce-results info="Requests" search-next="searchNextRequests" refresh="refreshRequests" select="selectRequest" ng-show="SelectedPatient"></ce-results>
 						<div class="no-patient" ng-show="!SelectedPatient"></div>
 					</div>
 				</div>

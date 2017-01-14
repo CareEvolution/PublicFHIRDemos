@@ -22,5 +22,5 @@ var CommunicatorConfiguration = {
 		{ code: "unknown", name: "Unknown" },
 	],
 
-	defaultResultsPerPage: 10
+	defaultResultsPerPage: 5
 };
