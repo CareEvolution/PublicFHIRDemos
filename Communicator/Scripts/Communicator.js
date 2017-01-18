@@ -606,8 +606,11 @@
         	var result = {
         		resultHeader: attachment.title || "data",
         		dataUrl: null
-	        };
-        	if (attachment.data) {
+        	};
+        	if (attachment.url) {
+        		result.dataUrl = attachment.url;
+        		result.dataFileName = (attachment.title || "data");
+        	} else if (attachment.data) {
         		var mimeType = attachment.contentType || "application/octet-stream";
         		result.dataUrl = "data:" + mimeType + ";base64," + attachment.data;
         		result.dataFileName = (attachment.title || "data");
