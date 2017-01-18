@@ -70,8 +70,16 @@
 			return parameters;
 		}
 
+		function hasScope(scope, value) {
+			return scope.split(" ").indexOf(value) >= 0;
+		}
+
 		return {
-			login: function(clientID, onSuccess, onError) {
+			login: function(clientID, onSuccess, onError, scope) {
+				scope = scope || "user/*.* launch";
+
+				var requiresPatientID = hasScope(scope, "launch") || hasScope(scope, "launch/patient");
+
 				var mode = sessionStorage[SESSION_MODE];
 				var tokenUrl = sessionStorage[SESSION_TOKEN_URL];
 				var authorizationToken = sessionStorage[SESSION_AUTHORIZATION_TOKEN];
@@ -80,7 +88,7 @@
 				var fhirUrl = urlParameters["fhirServiceUrl"];
 				if (fhirUrl) {
 					var patientID = urlParameters["patientID"];
-					if (!patientID) {
+					if (requiresPatientID && !patientID) {
 						onError("Please specify the ID of the patient of interest using the 'patientID' URL parameter");
 					} else {
 						mode = MODE_ANONYMOUS;
@@ -159,19 +167,26 @@
 							if (!authorizeUrl || !tokenUrl) {
 								onError("The FHIR server conformance statement does not specify the SMART authorization and token URLs");
 							} else {
+								var requiresLaunch = hasScope(scope, "launch");
 								var launch = urlParameters["launch"];
-								var redirectParameters = "";
-								redirectParameters = appendParameter(redirectParameters, "response_type", "code");
-								redirectParameters = appendParameter(redirectParameters, "client_id", clientID);
-								redirectParameters = appendParameter(redirectParameters, "redirect_uri", getRedirectUrl());
-								redirectParameters = appendParameter(redirectParameters, "aud", fhirUrl);
-								redirectParameters = appendParameter(redirectParameters, "scope", "user/*.* launch");
-								redirectParameters = appendParameter(redirectParameters, "launch", launch);
-								mode = MODE_CODE;
-								sessionStorage[SESSION_FHIR_URL] = fhirUrl;
-								sessionStorage[SESSION_MODE] = mode;
-								sessionStorage[SESSION_TOKEN_URL] = tokenUrl;
-								window.location = authorizeUrl + redirectParameters;
+								if (requiresLaunch && !launch) {
+									onError("Please specify the launch context using the 'launch' URL parameter");
+								} else {
+									var redirectParameters = "";
+									redirectParameters = appendParameter(redirectParameters, "response_type", "code");
+									redirectParameters = appendParameter(redirectParameters, "client_id", clientID);
+									redirectParameters = appendParameter(redirectParameters, "redirect_uri", getRedirectUrl());
+									redirectParameters = appendParameter(redirectParameters, "aud", fhirUrl);
+									redirectParameters = appendParameter(redirectParameters, "scope", scope);
+									if (requiresLaunch) {
+										redirectParameters = appendParameter(redirectParameters, "launch", launch);
+									}
+									mode = MODE_CODE;
+									sessionStorage[SESSION_FHIR_URL] = fhirUrl;
+									sessionStorage[SESSION_MODE] = mode;
+									sessionStorage[SESSION_TOKEN_URL] = tokenUrl;
+									window.location = authorizeUrl + redirectParameters;
+								}
 							}
 						}).error(function(data, status) {
 							if (data && data.issue && data.issue.length > 0 && data.issue[0].details) {
