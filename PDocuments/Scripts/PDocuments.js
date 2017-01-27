@@ -205,7 +205,7 @@
         	$scope.SearchErrorMessage = null;
         	$scope.Searching = true;
         	$http({
-        		url: url || (fhirUrl + "/DocumentReference?patient=Patient/" + patientID),
+        		url: url || (fhirUrl + "/DocumentReference?patient=" + patientID + "&_format=json" ),
         		method: "GET",
         		headers: getHeaders(),
         	}).success(function(data) {
@@ -290,13 +290,17 @@
         			}
         			var attachment = content.attachment;
         			if (attachment) {
-        				if (attachment.data) {
+        				var dataFileName = (documentManifest.description || "data");
+        				if (documentManifest.content.length > 1) {
+        					dataFileName += "_" + i;
+        				}
+        				if (attachment.url) {
+        					detail.dataUrl = attachment.url;
+        					detail.dataFileName = dataFileName;
+        				} else if (attachment.data) {
         					var mimeType = attachment.contentType || "application/octet-stream";
         					detail.dataUrl = "data:" + mimeType + ";base64," + attachment.data;
-        					detail.dataFileName = (documentManifest.description || "data");
-        					if (documentManifest.content.length > 1) {
-        						detail.dataFileName += "_" + i;
-							}
+        					detail.dataFileName = dataFileName;
         				}
         				if (attachment.contentType) {
         					detail.properties["Content type"] = attachment.contentType;
@@ -329,12 +333,23 @@
         			"System": documentManifest.masterIdentifier.system
         		})
         	});
-        	details.push(getCodeableConceptDetails("Type", documentManifest.type));
-        	details.push(getCodeableConceptDetails("Class", documentManifest.class));
-        	details.push(getCodeableConceptDetails("Confidentiality", documentManifest.securityLabel[0]));
-        	if (documentManifest.context) {
-        		details.push(getCodeableConceptDetails("Facility type", documentManifest.context.facilityType));
-        		details.push(getCodeableConceptDetails("Practice setting", documentManifest.context.practiceSetting));
+        	if (documentManifest.type) {
+        		details.push(getCodeableConceptDetails("Type", documentManifest.type));
+        	}
+        	if (documentManifest.class) {
+        		details.push(getCodeableConceptDetails("Class", documentManifest.class));
+        	}
+        	if (documentManifest.securityLabel && documentManifest.securityLabel.length > 0) {
+        		details.push(getCodeableConceptDetails("Confidentiality", documentManifest.securityLabel[0]));
+        	}
+        	var context = documentManifest.context;
+        	if (context) {
+        		if (context.facilityType) {
+        			details.push(getCodeableConceptDetails("Facility type", context.facilityType));
+        		}
+        		if (context.practiceSetting) {
+	        		details.push(getCodeableConceptDetails("Practice setting", context.practiceSetting));
+        		}
         	}
         	document.details = details;
         	return document;
