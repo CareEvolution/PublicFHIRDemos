@@ -140,6 +140,7 @@ body
 	.details-subpart .details-part
 	{
 		margin-left: 1em;
+		margin-bottom: 0.3em;
 	}
 
 .configuration
@@ -165,4 +166,9 @@ body
 td
 {
 	vertical-align: top;
+}
+
+.narrow
+{
+	max-width: 8em;
 }

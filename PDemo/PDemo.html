@@ -125,7 +125,7 @@
 
 					<div class="form-group" ng-show="searchFieldEnabled('birthdate')">
 						<label for="birthDate">{{ searchFieldLabel('birthdate') }}</label>
-						<input id="birthDate" name="birthDate" type="text" class="form-control" ng-model="BirthDate">
+						<input id="birthDate" name="birthDate" type="text" class="form-control" placeholder="yyyy-mm-dd" ng-model="BirthDate">
 					</div>
 
 					<div class="form-group" ng-show="searchFieldEnabled('age')">
@@ -247,6 +247,35 @@
 					{{ SelectedPatient.detailsHeader }}
 				</div>
 				<div class="details-body" ng-show="SelectedPatient">
+                    <div class="details-part">
+                        <div class="details-subpart">
+                            <div class="details-subpart-header" ng-click="toggleCollapse(SelectedPatient.summaryDocument)">
+                                <i class="glyphicon-plus" ng-show="SelectedPatient.summaryDocument.collapsed"></i>
+                                <i class="glyphicon-minus" ng-show="!SelectedPatient.summaryDocument.collapsed"></i>
+                                Summary record
+                            </div>
+                            <div class="details-part" ng-show="!SelectedPatient.summaryDocument.collapsed">
+                                <form class="form-inline">
+                                    <button type="submit" class="btn btn-success" ng-click="getSelectedPatientSummaryDocument()" ng-disabled="GettingSummaryDocument">Request</button>
+                                    <div class="form-group">
+                                        <label for="summary-document-from">From:</label>
+                                        <input type="text" class="form-control narrow" id="summary-document-from" placeholder="yyyy-mm-dd" ng-model="SelectedPatient.summaryDocument.from" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="summary-document-to">To:</label>
+                                        <input type="text" class="form-control narrow" id="summary-document-to" placeholder="yyyy-mm-dd" ng-model="SelectedPatient.summaryDocument.to" />
+                                    </div>
+                                </form>
+                            </div>
+                            <div ng-show="GettingSummaryDocument">
+                                <img src="Images/CircularProgressAnimation.gif" width="32" />
+                                Fetching document...
+                            </div>
+                           <div class="details-part" ng-show="SelectedPatient.summaryDocument.url && !GettingSummaryDocument">
+                                <a href="{{SelectedPatient.summaryDocument.url}}" download="{{SelectedPatient.summaryDocument.fileName}}">Download {{SelectedPatient.summaryDocument.fileName}}</a>
+                            </div>
+                        </div>
+                    </div>
 					<div class="details-part" ng-repeat="part in SelectedPatient.detailsParts">
 						<span class="details-part-data" ng-if="!part.parts">{{part}}</span>
 						<div class="details-subpart" ng-if="part.parts">

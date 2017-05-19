@@ -14,6 +14,11 @@
 
     var PDemoApp = angular.module("PDemoApp", []);
 
+    PDemoApp.config(["$compileProvider", function($compileProvider) {
+    	// Needed to be able to generate 'data:' HREFs
+    	$compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|file|blob|data):/);
+    }]);
+
     PDemoApp.factory("urlParameters", function () {
         var result = {};
         var query = window.location.search.substring(1);
@@ -95,6 +100,7 @@
         $scope.Sorts = PDemoConfiguration.sorts;
 
         $scope.Searching = false;
+        $scope.GettingSummaryDocument = false;
         $scope.SearchErrorMessage = null;
 
         $scope.Patients = [];
@@ -358,6 +364,56 @@
             doSearch(searchUrl);
         };
 
+        $scope.getSelectedPatientSummaryDocument = function() {
+        	if ($scope.SelectedPatient) {
+        		var summaryDocument = $scope.SelectedPatient.summaryDocument;
+        		// http://www.fhir.org/guides/argonaut/r2/OperationDefinition-docref.html
+        		var parameters = "";
+        		parameters = appendParameter(parameters, "patient", $scope.SelectedPatient.id);
+        		if (summaryDocument.from) {
+        			parameters = appendParameter(parameters, "start", summaryDocument.from);
+        		}
+        		if (summaryDocument.to) {
+        			parameters = appendParameter(parameters, "end", summaryDocument.to);
+        		}
+        		parameters = appendParameter(parameters, "type", "34133-9");
+        		var url = fhirUrl + "/DocumentReference/$docref" + parameters;
+        		$scope.SearchErrorMessage = null;
+        		$scope.GettingSummaryDocument = true;
+        		$http({
+        			url: url,
+        			method: "GET",
+        			headers: getHeaders(),
+        		}).success(function(data) {
+        			$scope.GettingSummaryDocument = false;
+        			if (data.entry) {
+        				for (var i = 0; i < data.entry.length; i++) {
+        					var url = getDocumentUrl(data.entry[i].resource);
+        					if (url) {
+        						summaryDocument.url = url;
+        						var fileName = "summary";
+        						if (summaryDocument.from) {
+        							fileName += summaryDocument.from;
+        						}
+        						if (summaryDocument.from || summaryDocument.to) {
+        							fileName += "-";
+        						}
+        						if (summaryDocument.to) {
+        							fileName += summaryDocument.to;
+        						}
+        						fileName += ".xml";
+        						summaryDocument.fileName = fileName;
+        						break;
+        					}
+        				}
+        			}
+        		}).error(function(data, status) {
+        			$scope.GettingSummaryDocument = false;
+        			handleHttpError("Get patient CCDs", data, status);
+        		});
+			}
+        };
+
         $scope.configure = function () {
             $scope.EditableConfiguration = angular.copy(getConfiguration());
         };
@@ -500,15 +556,15 @@
         };
 
         $scope.select = function (patient) {
-            if (!getConfiguration().getDetails || $scope.searchDisabled()) {
-                $scope.SelectedPatient = patient;
+        	if (!getConfiguration().getDetails || $scope.searchDisabled()) {
+       			$scope.SelectedPatient = patient;
             } else {
             	var patientId = patient.id;
                 var patientLink = patient.selfLink;
                 doGetPatient(patientId, patientLink, function (patient) {
                 	patient.id = patientId;
                     patient.selfLink = patientLink;
-                    $scope.SelectedPatient = patient;
+                   	$scope.SelectedPatient = patient;
                 });
             }
         };
@@ -528,12 +584,40 @@
             }
         };
 
-        function getPatientResources(patientId, resourceType, mapResource, onSuccess) {
-        	var patientSearchParameter = PDemoConfiguration.patientSearchParameters[resourceType];
-        	if (!patientSearchParameter) {
-        		throw "No patient search parameter defined for " + resourceType;
+        function getPatientResources(patientId, resourceType, mapResource, onSuccess, extraParameters) {
+        	var processResource = function(parts, resource) {
+        		var mappedResource = mapResource(resource);
+        		if (mappedResource) {
+        			if (angular.isArray(mappedResource)) {
+        				parts.push.apply(parts, mappedResource);
+        			} else {
+        				parts.push(mappedResource);
+        			}
+        		}
         	}
-			// Some server (e.g. Furore) do not like the complete URL as the id, nor an initial '/', so we reduce the id to a relative URL
+        	getPatientResourcesPrimitive(patientId, resourceType, processResource, onSuccess, extraParameters);
+        };
+
+        function getPatientResourcesAsyncFix(patientId, resourceType, mapResource, onSuccess, extraParameters) {
+        	var processResource = function(parts, resource) {
+        		var mappedResource = mapResource(resource);
+        		if (mappedResource && mappedResource.part) {
+        			if (angular.isArray(mappedResource.part)) {
+        				parts.push.apply(parts, mappedResource.part);
+        			} else {
+        				parts.push(mappedResource.part);
+        			}
+        			if (mappedResource.asyncFixParts) {
+        				mappedResource.asyncFixParts(parts);
+        			}
+        		}
+        	}
+        	getPatientResourcesPrimitive(patientId, resourceType, processResource, onSuccess, extraParameters);
+        };
+
+        function getPatientResourcesPrimitive(patientId, resourceType, processResource, onSuccess, extraParameters) {
+        	var patientSearchParameter = PDemoConfiguration.patientSearchParameters[resourceType] || "patient";
+        	// Some server (e.g. Furore) do not like the complete URL as the id, nor an initial '/', so we reduce the id to a relative URL
         	if (patientId.indexOf(fhirUrl) === 0) {
         		patientId = patientId.substr(fhirUrl.length);
         	}
@@ -541,35 +625,35 @@
         		patientId = patientId.substr(1);
         	}
         	var searchUrl = fhirUrl + "/" + resourceType + "?_count=100&" + patientSearchParameter + "=" + encodeURIComponent(patientId);
+        	if (extraParameters) {
+        		searchUrl += "&" + extraParameters;
+        	}
         	$http({
         		url: searchUrl,
         		method: "GET",
         		headers: getHeaders(),
-        	}).success(function (data) {
+        	}).success(function(data) {
         		var parts = [];
         		if (data.entry) {
         			for (var i = 0; i < data.entry.length; i++) {
         				var entry = data.entry[i];
         				if (entry && entry.resource) {
-        					var mappedResource = mapResource(entry.resource);
-        					if (mappedResource) {
-        						parts.push(mappedResource);
-        					}
+        					processResource(parts, entry.resource);
         				}
-					}
+        			}
         		}
         		onSuccess(parts);
-        	}).error(function (data, status) {
+        	}).error(function(data, status) {
         		handleHttpError("Get " + resourceType, data, status);
         	});
         };
 
         function mapCondition(condition) {
-        	return codeAndDateDescription("condition", condition.code, condition.dateAsserted);
+        	return codeAndDateDescription("condition", condition.code, condition.dateAsserted || condition.onsetDateTime);
         }
 
         function mapEncounter(encounter) {
-        	// http://www.hl7.org/implement/standards/fhir/encounter.html
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/encounter.html
 			var period = encounter.period;
         	if (period && period.start) {
         		var part = "Admitted on " + getDisplayableDate(period.start);
@@ -582,34 +666,92 @@
         }
 
         function mapProcedure(procedure) {
-        	// http://www.hl7.org/implement/standards/fhir/procedure.html
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/procedure.html
         	return codeAndDateDescription("procedure", procedure.code, procedure.performedPeriod ? procedure.performedPeriod.start : procedure.performedDateTime);
         }
 
         function mapImmunization(immunization) {
-        	// http://www.hl7.org/implement/standards/fhir/immunization.html
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/immunization.html
         	return codeAndDateDescription("immunization", immunization.vaccineCode, immunization.date);
         }
 
-        function mapMedicationOrder(medicationOrder) {
-        	// http://www.hl7.org/implement/standards/fhir/medicationorder.html
-        	// TODO ... If medicationCodeableConcept is missing get it from referenced medication (medicationOrder.medicationReference)
-        	var medicationCode = medicationOrder.medicationCodeableConcept
-        	return codeAndDateDescription("medication", medicationCode, medicationOrder.dateWritten);
+        function mapMedicationOrderOrStatement(medicationOrderOrStatement) {
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/medicationorder.html
+        	var date = medicationOrderOrStatement.dateWritten || medicationOrderOrStatement.dateAsserted;
+        	var medicationReference = medicationOrderOrStatement.medicationReference;
+        	if (medicationReference) {
+        		var description = "";
+        		var asyncFixParts = null;
+        		if (medicationReference.display) {
+        			description = medicationReference.display;
+        		} else if (medicationReference.reference) {
+        			var relativeUrl = medicationReference.reference;
+        			description = relativeUrl;
+        			asyncFixParts = function(parts) {
+        				$http({
+        					url: fhirUrl + "/" + relativeUrl,
+        					method: "GET",
+        					headers: getHeaders(),
+        				}).success(function(data) {
+        					fixParts(parts, relativeUrl, getCodeableConceptDisplayName(data.code));
+        				}).error(function(data, status) {
+        					handleHttpError("Get practitioner", data, status);
+        				});
+        			}
+        		} else {
+        			description = "Unknown medication";
+        		}
+        		if (date) {
+        			description += " on ";
+        			description += getDisplayableDate(date);
+        		}
+        		return {
+        			part: description,
+        			asyncFixParts: asyncFixParts
+        		}
+			}
+        	return {
+        		part: codeAndDateDescription("medication", medicationOrderOrStatement.medicationCodeableConcept, date),
+        		asyncFixParts: null
+        	}
 		}
 
         function mapReport(report) {
-        	// http://www.hl7.org/implement/standards/fhir/DiagnosticReport.html
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/DiagnosticReport.html
         	return codeAndDateDescription("report", report.code, report.effectivePeriod ? report.effectivePeriod.start : report.effectiveDateTime);
         }
 
         function mapObservation(observation) {
-        	// http://www.hl7.org/implement/standards/fhir/Observation.html
-        	return codeAndDateDescription("observation", observation.code, observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime);
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/Observation.html
+        	var description = getCodeableConceptDisplayName(observation.code) || "Unknown observation";
+        	if (observation.valueString) {
+        		description += ": " + observation.valueString;
+        	} else if (observation.valueCodeableConcept) {
+        		description += ": " + getCodeableConceptDisplayName(observation.valueCodeableConcept);
+        	} else if (observation.valueQuantity) {
+        		description += ": " + observation.valueQuantity.value + " " + (observation.valueQuantity.unit || observation.valueQuantity.code);
+        	}
+        	var dateTime = observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime;
+        	if (dateTime) {
+        		description += " on ";
+        		description += getDisplayableDate(dateTime);
+        	}
+        	return description;
+        }
+
+        function mapSmokingStatusObservation(observation) {
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/Observation.html
+        	var description = getCodeableConceptDisplayName(observation.valueCodeableConcept);
+        	var dateTime = observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime;
+        	if (dateTime) {
+        		description += " on ";
+        		description += getDisplayableDate(dateTime);
+        	}
+        	return description;
         }
 
         function mapAllergyIntolerance(allergyIntolerance) {
-        	// http://www.hl7.org/fhir/allergyintolerance.html
+        	// http://www.hl7.org/fhir/DSTU2/allergyintolerance.html
         	var description = getCodeableConceptDisplayName(allergyIntolerance.substance) || "Unknown allergy";
         	if (allergyIntolerance.onset) {
         		description += " on ";
@@ -627,6 +769,91 @@
         			description += reactions.join("");
         		}
 			}
+        	return description;
+        }
+
+        function mapCarePlan(carePlan) {
+        	// http://www.fhir.org/guides/argonaut/r2/StructureDefinition-argo-careplan.html
+        	var description = carePlan.description || "Unknown care plan";
+        	var period = carePlan.period;
+        	if (carePlan.period) {
+        		if (period.start && !period.end) {
+        			description += " on ";
+        			description += getDisplayableDate(period.start);
+        		} else if (!period.start && period.end) {
+        			description += " on ";
+        			description += getDisplayableDate(period.end);
+        		} else if (period.start && period.end) {
+        			description += " from ";
+        			description += getDisplayableDate(period.start);
+        			description += " to ";
+        			description += getDisplayableDate(period.end);
+				}
+        	}
+        	return description;
+        }
+
+        function mapCareTeam(careTeam) {
+        	// http://www.fhir.org/guides/argonaut/r2/StructureDefinition-argo-careteam.html
+        	var descriptions = [];
+        	var caregivers = [];
+        	var participants = careTeam.participant;
+        	if (participants) {
+        		for (var i = 0; i < participants.length; i++) {
+        			var participant = participants[i];
+        			var member = participant.member.display;
+        			if (!member) {
+        				if (!participant.member.reference) {
+        					member = "?";
+        				} else {
+        					member = participant.member.reference;
+        					caregivers.push(participant.member.reference);
+        				}
+        			}
+        			var role = getCodeableConceptDisplayName(participant.role);
+        			if (role) {
+        				member += " (" + role + ")";
+        			}
+        			descriptions.push(member);
+        		}
+        	}
+        	return {
+        		part: descriptions,
+        		asyncFixParts: function(parts) {
+        			for (var i = 0; i < caregivers.length; i++) {
+        				var relativeUrl = caregivers[i];
+        				$http({
+        					url: fhirUrl + "/" + relativeUrl,
+        					method: "GET",
+        					headers: getHeaders(),
+        				}).success(function(data) {
+        					fixParts(parts, relativeUrl, composeDisplayName(data.name));
+        				}).error(function(data, status) {
+        					handleHttpError("Get practitioner", data, status);
+        				});
+					}
+        		}
+        	}
+        }
+
+        function mapDevice(device) {
+        	// http://www.hl7.org/fhir/DSTU2/device.html
+        	var description = getCodeableConceptDisplayName(device.type) || "Unknown device";
+        	if (device.udi) {
+        		description += ": ";
+        		description += device.udi;
+        	}
+        	return description;
+        }
+
+        function mapGoal(goal) {
+        	// http://www.hl7.org/fhir/DSTU2/goal.html
+        	var description = goal.description;
+        	var targetDate = goal.targetDate || goal.targetDateTime;
+        	if (targetDate) {
+        		description += " by ";
+        		description += getDisplayableDate(targetDate);
+        	}
         	return description;
         }
 
@@ -648,7 +875,7 @@
                 headers: getHeaders(),
             }).success(function (data) {
             	$scope.Searching = false;
-            	// http://www.hl7.org/implement/standards/fhir/Bundle.html
+            	// http://www.hl7.org/implement/standards/fhir/DSTU2/Bundle.html
                 if (data.entry) {
                     var knownIdentifierSystem = computeKnownIdentifierSystems();
                     for (var i = 0; i < data.entry.length; i++) {
@@ -676,6 +903,34 @@
             }).error(function (data, status) {
                 handleHttpError("Get patient", data, status);
             });
+        }
+
+        function fixParts(parts, toReplace, replacement) {
+        	if (replacement) {
+        		for (var i = 0; i < parts.length; i++) {
+        			if (parts[i].indexOf(toReplace) >= 0) {
+        				parts[i] = parts[i].replace(toReplace, replacement);
+        				return;
+        			}
+        		}
+        	}
+        }
+
+        function getDocumentUrl(documentReference) {
+        	if (documentReference.content) {
+        		for (var i = 0; i < documentReference.content.length; i++) {
+        			var contentAttachment = documentReference.content[i].attachment;
+        			if (contentAttachment) {
+        				if (contentAttachment.url) {
+        					return contentAttachment.url;
+        				} else if (contentAttachment.data) {
+        					var mimeType = contentAttachment.contentType || "application/octet-stream";
+        					return "data:" + mimeType + ";base64," + contentAttachment.data;
+        				}
+        			}
+        		}
+        	}
+        	return null;
         }
 
         function getHeaders() {
@@ -749,7 +1004,7 @@
         }
 
         function escapeFhirSearchParameter(value) {
-            // See http://www.hl7.org/implement/standards/fhir/search.html#escaping
+        	// See http://www.hl7.org/implement/standards/fhir/DSTU2/search.html#escaping
             if (!value) {
                 return "";
             }
@@ -796,7 +1051,7 @@
 
         function createPatient(patient, id, selfLink, knownIdentifierSystems) {
             var displayName = composeDisplayName(getOfficialOrFirstName(patient));
-            var genderDisplayName = getGenderDisplayName(patient);
+            var genderDisplayName = getGenderDisplayName(patient.gender);
             var displayAgeOrDeceased = composeDisplayAgeOrDeceased(patient);
             return {
                 resultHeader: displayName,
@@ -809,11 +1064,20 @@
 				id: id,
                 selfLink: selfLink,
                 detailsHeader: displayName,
+                summaryDocument: {
+					collapsed: true,
+                	from: null,
+                	to: null,
+                	url: null,
+					fileName: null
+                },
                 detailsParts: filterEmptyAndFlatten([
 					genderDisplayName,
 					displayAgeOrDeceased,
+					getBirthSexDisplayName(patient),
 					getRaceDisplayName(patient),
 					getEthnicityDisplayName(patient),
+					getPreferredLanguageDisplayName(patient),
 					getLastUpdatedDisplay(patient),
 					!patient.name || patient.name.constructor != Array || patient.name.length === 0 ?
 						null :
@@ -859,7 +1123,7 @@
 						{
 						    header: "Identifiers",
 						    parts: patient.identifier.map(function (identifier) {
-						        // See http://www.hl7.org/implement/standards/fhir/datatypes.html#identifier
+						    	// See http://www.hl7.org/implement/standards/fhir/DSTU2/datatypes.html#identifier
 						        return joinNonEmpty(" ", [
 									addPrefixSuffixNonEmpty("", (identifier.type ? identifier.type.text : null ) || getIdentifierSystemDisplayName(identifier.system, knownIdentifierSystems), ":"),
 									identifier.value,
@@ -869,6 +1133,14 @@
 						    collapsed: false,
 						    load: null,
 						},
+					{
+						header: "Smoking status",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResources(id, "Observation", mapSmokingStatusObservation, onSuccess, "code=http://loinc.org|72166-2" )
+						},
+					},
 					{
 					    header: "Encounters",
 					    parts: [". . ."],
@@ -906,8 +1178,16 @@
 					    parts: [". . ."],
 					    collapsed: true,
 					    load: function (onSuccess) {
-					    	getPatientResources(id, "MedicationOrder", mapMedicationOrder, onSuccess)
+					    	getPatientResourcesAsyncFix(id, "MedicationOrder", mapMedicationOrderOrStatement, onSuccess)
 					    },
+					},
+					{
+						header: "Medication statements",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResourcesAsyncFix(id, "MedicationStatement", mapMedicationOrderOrStatement, onSuccess)
+						},
 					},
 					{
 					    header: "Reports",
@@ -918,12 +1198,20 @@
 					    },
 					},
 					{
-					    header: "Observations",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-					    	getPatientResources(id, "Observation", mapObservation, onSuccess)
-					    },
+						header: "Labs",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResources(id, "Observation", mapObservation, onSuccess, "category=laboratory")
+						},
+					},
+					{
+						header: "Vital signs",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResources(id, "Observation", mapObservation, onSuccess, "category=vital-signs")
+						},
 					},
 					{
 						header: "Allergies",
@@ -931,6 +1219,38 @@
 						collapsed: true,
 						load: function (onSuccess) {
 							getPatientResources(id, "AllergyIntolerance", mapAllergyIntolerance, onSuccess)
+						},
+					},
+					{
+						header: "Devices",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResources(id, "Device", mapDevice, onSuccess)
+						},
+					},
+					{
+						header: "Care plan",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResources(id, "CarePlan", mapCarePlan, onSuccess, "category=assess-plan")
+						},
+					},
+					{
+						header: "Care team",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResourcesAsyncFix(id, "CarePlan", mapCareTeam, onSuccess, "category=careteam")
+						},
+					},
+					{
+						header: "Goals",
+						parts: [". . ."],
+						collapsed: true,
+						load: function(onSuccess) {
+							getPatientResources(id, "Goal", mapGoal, onSuccess)
 						},
 					},
                 ]),
@@ -986,16 +1306,6 @@
             return !names ? null : joinNonEmpty(" ", names.map(firstUppercase));
         }
 
-        function getGenderDisplayName(patient) {
-        	var genderValues = PDemoConfiguration.genderValues;
-        	for (var i = 0; i < genderValues.length; i++) {
-        		if (patient.gender === genderValues[i].code) {
-        			return genderValues[i].name;
-        		}
-        	}
-        	return patient.gender;
-        }
-
         function getRaceDisplayName(patient) {
         	var raceExtension = getExtension(patient, "http://hl7.org/fhir/StructureDefinition/us-core-race");
         	if (!raceExtension) {
@@ -1010,6 +1320,37 @@
         		return null;
         	}
         	return getCodeableConceptDisplayName(ethnicityExtension.valueCodeableConcept, PDemoConfiguration.ethnicityValues);
+        }
+
+        function getBirthSexDisplayName(patient) {
+        	var birthSexExtension = getExtension(patient, "http://fhir.org/guides/argonaut/StructureDefinition/argo-birthsex");
+        	if (!birthSexExtension || !birthSexExtension.valueCode) {
+        		return null;
+        	}
+        	return "Birth sex: " + getGenderDisplayName(birthSexExtension.valueCode);
+        }
+
+        function getGenderDisplayName(genderOrSex) {
+        	var genderValues = PDemoConfiguration.genderValues;
+        	for (var i = 0; i < genderValues.length; i++) {
+        		if (genderOrSex === genderValues[i].code) {
+        			return genderValues[i].name;
+        		}
+        	}
+        	return genderOrSex;
+        }
+
+        function getPreferredLanguageDisplayName(patient) {
+        	var communications = patient.communication;
+        	if (!communications || communications.length == 0) {
+        		return null;
+        	}
+        	for (var i = 0; i < communications.length; i++) {
+        		if (communications[i].preferred) {
+        			return getCodeableConceptDisplayName(communications[i].language, null);
+        		}
+        	}
+        	return getCodeableConceptDisplayName(communications[0].language, null);
         }
 
         function getExtension(resource, url) {
@@ -1032,7 +1373,7 @@
         }
 
         function getCodeableConceptDisplayName(codeableConcept, standardValues) {
-            // See http://www.hl7.org/implement/standards/fhir/datatypes.html#codeableconcept
+        	// See http://www.hl7.org/implement/standards/fhir/DSTU2/datatypes.html#codeableconcept
         	if (codeableConcept) {
         		var coding = codeableConcept.coding;
         		if (standardValues && coding && coding.length > 0) {

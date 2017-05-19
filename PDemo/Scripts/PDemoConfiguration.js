@@ -9,7 +9,7 @@ var PDemoConfiguration = {
 	// clientID: "6440eab7-6ba4-4697-ac6d-5b0f78b409d0", // Epic
 	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
 	
-	version: "1.3.1",
+	version: "2.0.0",
 
 	fhirVersion: "DSTU 2",
 
@@ -52,9 +52,12 @@ var PDemoConfiguration = {
 	// See http://www.hl7.org/implement/standards/fhir/valueset-administrative-gender.html
 	genderValues: [
 		{ code: "male", name: "Male" },
+		{ code: "M", name: "Male" },
 		{ code: "female", name: "Female" },
+		{ code: "F", name: "Female" },
 		{ code: "other", name: "Other" },
 		{ code: "unknown", name: "Unknown" },
+		{ code: "UNK", name: "Unknown" },
 	],
 
 	// See https://www.hl7.org/fhir/daf/valueset-daf-race.html
