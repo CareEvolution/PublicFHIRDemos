@@ -1,5 +1,5 @@
 ﻿/* 
- * Copyright (c) 2015, CareEvolution Inc (info@careevolution.com)
+ * Copyright (c) 2015 - 2017, CareEvolution Inc (info@careevolution.com)
  * 
  * This file is licensed under the MIT License - see License.txt
  */
@@ -9,11 +9,11 @@ var PDemoConfiguration = {
 	// clientID: "6440eab7-6ba4-4697-ac6d-5b0f78b409d0", // Epic
 	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
 	
-	version: "2.0.0",
+	version: "2.1.0",
 
 	fhirVersion: "DSTU 2",
 
-	copyrightYears: "2015 - 2016",
+	copyrightYears: "2015 - 2017",
 
 	// Possible sorts
 	sorts: [
@@ -137,14 +137,17 @@ var PDemoConfiguration = {
 		{ uri: "urn:oid:2.16.840.1.113883.4.3.56", name: "Driver's license - WY" },
 	],
 
-	patientSearchParameters: {
-		"Encounter": "patient",
-		"Immunization": "patient",
-		"Procedure": "patient",
-		"Condition": "patient",
-		"MedicationOrder": "patient",
-		"DiagnosticReport": "patient",
-		"Observation": "patient",
-		"AllergyIntolerance": "patient",
+	dateSearchParameters: {
+		"Observation": "date",
+		"Encounter": "date",
+		"Immunization": "date",
+		"Procedure": "date",
+		"Condition": "onset",
+		"MedicationOrder": "datewritten",
+		"MedicationStatement": "effectivedate",
+		"DiagnosticReport": "date",
+		"AllergyIntolerance": "date",
+		"CarePlan": "date",
+		"Goal": "date"
 	},
 };

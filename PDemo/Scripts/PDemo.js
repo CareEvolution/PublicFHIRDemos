@@ -1,5 +1,5 @@
 /* 
- * Copyright (c) 2015, CareEvolution Inc (info@careevolution.com)
+ * Copyright (c) 2015 - 2017, CareEvolution Inc (info@careevolution.com)
  * 
  * This file is licensed under the MIT License - see License.txt
  */
@@ -110,6 +110,8 @@
 
         $scope.Configuration = null;
         $scope.EditableConfiguration = null;
+
+        $scope.DateRegExp = /\d\d\d\d\-\d\d-\d\d/;
 
         if ("resetConfiguration" in urlParameters) {
             resetConfiguration();
@@ -364,56 +366,6 @@
             doSearch(searchUrl);
         };
 
-        $scope.getSelectedPatientSummaryDocument = function() {
-        	if ($scope.SelectedPatient) {
-        		var summaryDocument = $scope.SelectedPatient.summaryDocument;
-        		// http://www.fhir.org/guides/argonaut/r2/OperationDefinition-docref.html
-        		var parameters = "";
-        		parameters = appendParameter(parameters, "patient", $scope.SelectedPatient.id);
-        		if (summaryDocument.from) {
-        			parameters = appendParameter(parameters, "start", summaryDocument.from);
-        		}
-        		if (summaryDocument.to) {
-        			parameters = appendParameter(parameters, "end", summaryDocument.to);
-        		}
-        		parameters = appendParameter(parameters, "type", "34133-9");
-        		var url = fhirUrl + "/DocumentReference/$docref" + parameters;
-        		$scope.SearchErrorMessage = null;
-        		$scope.GettingSummaryDocument = true;
-        		$http({
-        			url: url,
-        			method: "GET",
-        			headers: getHeaders(),
-        		}).success(function(data) {
-        			$scope.GettingSummaryDocument = false;
-        			if (data.entry) {
-        				for (var i = 0; i < data.entry.length; i++) {
-        					var url = getDocumentUrl(data.entry[i].resource);
-        					if (url) {
-        						summaryDocument.url = url;
-        						var fileName = "summary";
-        						if (summaryDocument.from) {
-        							fileName += summaryDocument.from;
-        						}
-        						if (summaryDocument.from || summaryDocument.to) {
-        							fileName += "-";
-        						}
-        						if (summaryDocument.to) {
-        							fileName += summaryDocument.to;
-        						}
-        						fileName += ".xml";
-        						summaryDocument.fileName = fileName;
-        						break;
-        					}
-        				}
-        			}
-        		}).error(function(data, status) {
-        			$scope.GettingSummaryDocument = false;
-        			handleHttpError("Get patient CCDs", data, status);
-        		});
-			}
-        };
-
         $scope.configure = function () {
             $scope.EditableConfiguration = angular.copy(getConfiguration());
         };
@@ -569,54 +521,51 @@
             }
         };
 
-        $scope.toggleCollapse = function (part) {
-            if (!(part.load && part.collapsed)) {
+        $scope.toggleCollapse = function(part) {
+        	var dateRangeIdentifier = createIdentifier(part.dateRange);
+        	var toLoad = part.load && part.collapsed && part.loadedDateRangeIdentifier !== dateRangeIdentifier;
+            if (!toLoad) {
                 part.collapsed = !part.collapsed;
-            } else {
-                part.load(function (parts) {
-                    if (!parts || parts.length == 0) {
-                        parts = ["---"]
-                    }
-                    part.parts = parts;
-                    part.load = null;
-                    part.collapsed = false;
-                })
+            } else if ($scope.dateRangeForm.$valid) {
+            	loadPart(part, dateRangeIdentifier);
             }
         };
 
-        function getPatientResources(patientId, resourceType, mapResource, onSuccess, extraParameters) {
-        	var processResource = function(parts, resource) {
-        		var mappedResource = mapResource(resource);
-        		if (mappedResource) {
-        			if (angular.isArray(mappedResource)) {
-        				parts.push.apply(parts, mappedResource);
-        			} else {
-        				parts.push(mappedResource);
+        $scope.$watch("SelectedPatient.dateRange", function() {
+        	if ($scope.SelectedPatient && $scope.dateRangeForm.$valid) {
+        		var dateRangeIdentifier = createIdentifier($scope.SelectedPatient.dateRange);
+        		for (var i = 0; i < $scope.SelectedPatient.detailsParts.length; i++) {
+        			var part = $scope.SelectedPatient.detailsParts[i];
+        			var loadedWithDifferentDateRange = part.load && !part.collapsed && part.loadedDateRangeIdentifier !== dateRangeIdentifier;
+        			if (loadedWithDifferentDateRange) {
+        				loadPart(part, dateRangeIdentifier);
         			}
         		}
         	}
-        	getPatientResourcesPrimitive(patientId, resourceType, processResource, onSuccess, extraParameters);
-        };
+        }, true);
 
-        function getPatientResourcesAsyncFix(patientId, resourceType, mapResource, onSuccess, extraParameters) {
-        	var processResource = function(parts, resource) {
-        		var mappedResource = mapResource(resource);
-        		if (mappedResource && mappedResource.part) {
-        			if (angular.isArray(mappedResource.part)) {
-        				parts.push.apply(parts, mappedResource.part);
-        			} else {
-        				parts.push(mappedResource.part);
-        			}
-        			if (mappedResource.asyncFixParts) {
-        				mappedResource.asyncFixParts(parts);
-        			}
+        function createIdentifier(dateRange) {
+        	return dateRange ?
+				dateRange.from + "-" + dateRange.to :
+        		null;
+        }
+
+        function loadPart(part, dateRangeIdentifier) {
+        	part.load(function(parts) {
+        		if (!parts || parts.length == 0) {
+        			parts = ["---"]
         		}
-        	}
-        	getPatientResourcesPrimitive(patientId, resourceType, processResource, onSuccess, extraParameters);
-        };
+        		part.parts = parts;
+        		part.collapsed = false;
+        		part.loadedDateRangeIdentifier = dateRangeIdentifier;
+        	})
+        }
 
-        function getPatientResourcesPrimitive(patientId, resourceType, processResource, onSuccess, extraParameters) {
-        	var patientSearchParameter = PDemoConfiguration.patientSearchParameters[resourceType] || "patient";
+        function getPatientResourcesPrimitive(patientId, dateRange, resourceType, processResource, onSuccess, onComplete, extraParameters) {
+        	var parameters = "";
+
+        	parameters = appendParameter(parameters, "_count", "100");
+
         	// Some server (e.g. Furore) do not like the complete URL as the id, nor an initial '/', so we reduce the id to a relative URL
         	if (patientId.indexOf(fhirUrl) === 0) {
         		patientId = patientId.substr(fhirUrl.length);
@@ -624,32 +573,97 @@
         	if (patientId[0] === "/") {
         		patientId = patientId.substr(1);
         	}
-        	var searchUrl = fhirUrl + "/" + resourceType + "?_count=100&" + patientSearchParameter + "=" + encodeURIComponent(patientId);
-        	if (extraParameters) {
-        		searchUrl += "&" + extraParameters;
+        	parameters = appendParameter(parameters, "patient", patientId);
+
+        	var dateSearchParameter = PDemoConfiguration.dateSearchParameters[resourceType];
+        	if (dateSearchParameter && dateRange && (dateRange.from || dateRange.to)) {
+        		if (dateRange.from === dateRange.to) {
+        			parameters = appendParameter(parameters, dateSearchParameter, dateRange.from);
+        		} else {
+        			if (dateRange.from) {
+        				parameters = appendParameter(parameters, dateSearchParameter, "ge" + dateRange.from);
+        			}
+        			if (dateRange.to) {
+        				parameters = appendParameter(parameters, dateSearchParameter, "le" + dateRange.to);
+        			}
+				}
         	}
+
+        	if (extraParameters) {
+        		parameters += "&" + extraParameters;
+        	}
+
+        	var searchUrl = fhirUrl + "/" + resourceType + parameters;
         	$http({
         		url: searchUrl,
         		method: "GET",
         		headers: getHeaders(),
         	}).success(function(data) {
+        		onComplete();
         		var parts = [];
         		if (data.entry) {
         			for (var i = 0; i < data.entry.length; i++) {
         				var entry = data.entry[i];
-        				if (entry && entry.resource) {
+        				if (entry && entry.resource && entry.resource.resourceType !== "OperationOutcome") {
         					processResource(parts, entry.resource);
         				}
         			}
         		}
         		onSuccess(parts);
         	}).error(function(data, status) {
+        		onComplete();
         		handleHttpError("Get " + resourceType, data, status);
         	});
         };
 
+        function getPatientSummaryDocument(patientId, dateRange, onSuccess, onComplete) {
+        	// http://www.fhir.org/guides/argonaut/r2/OperationDefinition-docref.html
+        	var parameters = "";
+        	parameters = appendParameter(parameters, "patient", patientId);
+        	if (dateRange.from) {
+        		parameters = appendParameter(parameters, "start", dateRange.from);
+        	}
+        	if (dateRange.to) {
+        		parameters = appendParameter(parameters, "end", dateRange.to);
+        	}
+        	parameters = appendParameter(parameters, "type", "34133-9");
+        	var url = fhirUrl + "/DocumentReference/$docref" + parameters;
+        	$http({
+        		url: url,
+        		method: "GET",
+        		headers: getHeaders(),
+        	}).success(function(data) {
+        		onComplete();
+        		var parts = [];
+        		if (data.entry) {
+        			for (var i = 0; i < data.entry.length; i++) {
+        				var url = getDocumentUrl(data.entry[i].resource);
+        				if (url) {
+        					var fileName = "summary";
+        					if (dateRange.from) {
+        						fileName += dateRange.from;
+        					}
+        					if (dateRange.from || dateRange.to) {
+        						fileName += "-";
+        					}
+        					if (dateRange.to) {
+        						fileName += dateRange.to;
+        					}
+        					fileName += ".xml";
+        					parts.push({ url: url, fileName: fileName });
+        					break;
+        				}
+        			}
+        		}
+        		onSuccess(parts);
+        	}).error(function(data, status) {
+        		onComplete();
+        		handleHttpError("Get patient CCDs", data, status);
+        	});
+        };
+
         function mapCondition(condition) {
-        	return codeAndDateDescription("condition", condition.code, condition.dateAsserted || condition.onsetDateTime);
+        	return codeAndDateDescription("condition", condition.code, condition.dateAsserted || condition.onsetDateTime || (condition.onsetPeriod ? condition.onsetPeriod.start : null));
         }
 
         function mapEncounter(encounter) {
@@ -723,6 +737,27 @@
 
         function mapObservation(observation) {
         	// http://www.hl7.org/implement/standards/fhir/DSTU2/Observation.html
+        	var description = mapObservationComponent(observation);
+        	if (observation.component && observation.component.length > 0) {
+        		description += " (";
+        		for (var i = 0; i < observation.component.length; i++) {
+        			if (i > 0) {
+        				description += ", ";
+        			}
+        			description += mapObservationComponent(observation.component[i]);
+				}
+        		description += ")";
+			}
+        	var dateTime = observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime;
+        	if (dateTime) {
+        		description += " on ";
+        		description += getDisplayableDate(dateTime);
+        	}
+        	return description;
+        }
+
+        function mapObservationComponent(observation) {
+        	// http://www.hl7.org/implement/standards/fhir/DSTU2/Observation.html
         	var description = getCodeableConceptDisplayName(observation.code) || "Unknown observation";
         	if (observation.valueString) {
         		description += ": " + observation.valueString;
@@ -730,11 +765,6 @@
         		description += ": " + getCodeableConceptDisplayName(observation.valueCodeableConcept);
         	} else if (observation.valueQuantity) {
         		description += ": " + observation.valueQuantity.value + " " + (observation.valueQuantity.unit || observation.valueQuantity.code);
-        	}
-        	var dateTime = observation.effectivePeriod ? observation.effectivePeriod.start : observation.effectiveDateTime;
-        	if (dateTime) {
-        		description += " on ";
-        		description += getDisplayableDate(dateTime);
         	}
         	return description;
         }
@@ -1053,6 +1083,10 @@
             var displayName = composeDisplayName(getOfficialOrFirstName(patient));
             var genderDisplayName = getGenderDisplayName(patient.gender);
             var displayAgeOrDeceased = composeDisplayAgeOrDeceased(patient);
+            var dateRange = {
+            	from: null,
+            	to: null,
+            };
             return {
                 resultHeader: displayName,
                 resultLines: [
@@ -1064,13 +1098,7 @@
 				id: id,
                 selfLink: selfLink,
                 detailsHeader: displayName,
-                summaryDocument: {
-					collapsed: true,
-                	from: null,
-                	to: null,
-                	url: null,
-					fileName: null
-                },
+                dateRange: dateRange,
                 detailsParts: filterEmptyAndFlatten([
 					genderDisplayName,
 					displayAgeOrDeceased,
@@ -1133,128 +1161,121 @@
 						    collapsed: false,
 						    load: null,
 						},
-					{
-						header: "Smoking status",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResources(id, "Observation", mapSmokingStatusObservation, onSuccess, "code=http://loinc.org|72166-2" )
-						},
-					},
-					{
-					    header: "Encounters",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-					    	getPatientResources(id, "Encounter", mapEncounter, onSuccess)
-					    },
-					},
-					{
-					    header: "Immunizations",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-					    	getPatientResources(id, "Immunization", mapImmunization, onSuccess)
-					    },
-					},
-					{
-					    header: "Procedures",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-					    	getPatientResources(id, "Procedure", mapProcedure, onSuccess)
-					    },
-					},
-					{
-					    header: "Conditions",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-							getPatientResources(id, "Condition", mapCondition, onSuccess);
-					    },
-					},
-					{
-					    header: "Medication orders",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-					    	getPatientResourcesAsyncFix(id, "MedicationOrder", mapMedicationOrderOrStatement, onSuccess)
-					    },
-					},
-					{
-						header: "Medication statements",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResourcesAsyncFix(id, "MedicationStatement", mapMedicationOrderOrStatement, onSuccess)
-						},
-					},
-					{
-					    header: "Reports",
-					    parts: [". . ."],
-					    collapsed: true,
-					    load: function (onSuccess) {
-					    	getPatientResources(id, "DiagnosticReport", mapReport, onSuccess)
-					    },
-					},
-					{
-						header: "Labs",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResources(id, "Observation", mapObservation, onSuccess, "category=laboratory")
-						},
-					},
-					{
-						header: "Vital signs",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResources(id, "Observation", mapObservation, onSuccess, "category=vital-signs")
-						},
-					},
-					{
-						header: "Allergies",
-						parts: [". . ."],
-						collapsed: true,
-						load: function (onSuccess) {
-							getPatientResources(id, "AllergyIntolerance", mapAllergyIntolerance, onSuccess)
-						},
-					},
-					{
-						header: "Devices",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResources(id, "Device", mapDevice, onSuccess)
-						},
-					},
-					{
-						header: "Care plan",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResources(id, "CarePlan", mapCarePlan, onSuccess, "category=assess-plan")
-						},
-					},
-					{
-						header: "Care team",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResourcesAsyncFix(id, "CarePlan", mapCareTeam, onSuccess, "category=careteam")
-						},
-					},
-					{
-						header: "Goals",
-						parts: [". . ."],
-						collapsed: true,
-						load: function(onSuccess) {
-							getPatientResources(id, "Goal", mapGoal, onSuccess)
-						},
-					},
+					createPatientResourcesPartToLoad(
+						"Smoking status", id, dateRange, "Observation", mapSmokingStatusObservation, "code=http://loinc.org|72166-2"
+					),
+					createPatientResourcesPartToLoad(
+						"Encounters", id, dateRange, "Encounter", mapEncounter
+					),
+					createPatientResourcesPartToLoad(
+						"Immunizations", id, dateRange, "Immunization", mapImmunization
+					),
+					createPatientResourcesPartToLoad(
+						"Procedures", id, dateRange, "Procedure", mapProcedure
+					),
+					createPatientResourcesPartToLoad(
+						"Problems", id, dateRange, "Condition", mapCondition, "category=problem"
+					),
+					createPatientResourcesPartToLoad(
+                		"Health concerns", id, dateRange, "Condition", mapCondition, "category=health-concern"
+					),
+					createPatientResourcesAsyncFixPartToLoad(
+						"Medication orders", id, dateRange, "MedicationOrder", mapMedicationOrderOrStatement
+					),
+					createPatientResourcesAsyncFixPartToLoad(
+						"Medication statements", id, dateRange, "MedicationStatement", mapMedicationOrderOrStatement
+					),
+					createPatientResourcesPartToLoad(
+						"Reports", id, dateRange, "DiagnosticReport", mapReport
+					),
+					createPatientResourcesPartToLoad(
+						"Labs", id, dateRange, "Observation", mapObservation, "category=laboratory"
+					),
+					createPatientResourcesPartToLoad(
+						"Vital signs", id, dateRange, "Observation", mapObservation, "category=vital-signs"
+					),
+					createPatientResourcesPartToLoad(
+						"Allergies", id, dateRange, "AllergyIntolerance", mapAllergyIntolerance
+					),
+					createPatientResourcesPartToLoad(
+						"Devices", id, dateRange, "Device", mapDevice
+					),
+					createPatientResourcesPartToLoad(
+						"Care plan", id, dateRange, "CarePlan", mapCarePlan, "category=assess-plan"
+					),
+					createPatientResourcesAsyncFixPartToLoad(
+						"Care team", id, dateRange, "CarePlan", mapCareTeam, "category=careteam"
+					),
+					createPatientResourcesPartToLoad(
+						"Goals", id, dateRange, "Goal", mapGoal
+					),
+					createPartToLoad(
+						"Summary record",
+						dateRange,
+						function(onSuccess, onComplete) {
+							getPatientSummaryDocument(id, dateRange, onSuccess, onComplete)
+						}
+					)
                 ]),
             };
+        }
+
+        function createPatientResourcesPartToLoad(header, id, dateRange, resourceType, mapResource, extraParameters ) {
+        	return createPartToLoad(
+				header,
+				dateRange,
+				function(onSuccess, onComplete) {
+					var processResource = function(parts, resource) {
+						var mappedResource = mapResource(resource);
+						if (mappedResource) {
+							if (angular.isArray(mappedResource)) {
+								parts.push.apply(parts, mappedResource);
+							} else {
+								parts.push(mappedResource);
+							}
+						}
+					}
+					getPatientResourcesPrimitive(id, dateRange, resourceType, processResource, onSuccess, onComplete, extraParameters);
+				}
+			);
+   		}
+
+        function createPatientResourcesAsyncFixPartToLoad(header, id, dateRange, resourceType, mapResource, extraParameters) {
+        	return createPartToLoad(
+				header,
+				dateRange,
+				function(onSuccess, onComplete) {
+					var processResource = function(parts, resource) {
+						var mappedResource = mapResource(resource);
+						if (mappedResource && mappedResource.part) {
+							if (angular.isArray(mappedResource.part)) {
+								parts.push.apply(parts, mappedResource.part);
+							} else {
+								parts.push(mappedResource.part);
+							}
+							if (mappedResource.asyncFixParts) {
+								mappedResource.asyncFixParts(parts);
+							}
+						}
+					}
+					getPatientResourcesPrimitive(id, dateRange, resourceType, processResource, onSuccess, onComplete, extraParameters);
+				}
+			);
+        }
+
+        function createPartToLoad(header, dateRange, loadWithOnComplete) {
+        	var result = {
+        		header: header,
+        		parts: [". . ."],
+        		collapsed: true,
+        		dateRange: dateRange,
+				loading: false
+        	};
+        	result.load = function(onSuccess) {
+        		result.loading = true;
+        		loadWithOnComplete(onSuccess, function() { result.loading = false; });
+        	};
+        	return result;
         }
 
         function getIdentifierSystemDisplayName(identifierSystem, knownIdentifierSystems) {

@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 
 <!--
- * Copyright (c) 2015, CareEvolution Inc (info@careevolution.com)
+ * Copyright (c) 2015 - 2017, CareEvolution Inc (info@careevolution.com)
  *
  * This file is licensed under the MIT License - see License.txt
 -->
@@ -247,35 +247,16 @@
 					{{ SelectedPatient.detailsHeader }}
 				</div>
 				<div class="details-body" ng-show="SelectedPatient">
-                    <div class="details-part">
-                        <div class="details-subpart">
-                            <div class="details-subpart-header" ng-click="toggleCollapse(SelectedPatient.summaryDocument)">
-                                <i class="glyphicon-plus" ng-show="SelectedPatient.summaryDocument.collapsed"></i>
-                                <i class="glyphicon-minus" ng-show="!SelectedPatient.summaryDocument.collapsed"></i>
-                                Summary record
-                            </div>
-                            <div class="details-part" ng-show="!SelectedPatient.summaryDocument.collapsed">
-                                <form class="form-inline">
-                                    <button type="submit" class="btn btn-success" ng-click="getSelectedPatientSummaryDocument()" ng-disabled="GettingSummaryDocument">Request</button>
-                                    <div class="form-group">
-                                        <label for="summary-document-from">From:</label>
-                                        <input type="text" class="form-control narrow" id="summary-document-from" placeholder="yyyy-mm-dd" ng-model="SelectedPatient.summaryDocument.from" />
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="summary-document-to">To:</label>
-                                        <input type="text" class="form-control narrow" id="summary-document-to" placeholder="yyyy-mm-dd" ng-model="SelectedPatient.summaryDocument.to" />
-                                    </div>
-                                </form>
-                            </div>
-                            <div ng-show="GettingSummaryDocument">
-                                <img src="Images/CircularProgressAnimation.gif" width="32" />
-                                Fetching document...
-                            </div>
-                           <div class="details-part" ng-show="SelectedPatient.summaryDocument.url && !GettingSummaryDocument">
-                                <a href="{{SelectedPatient.summaryDocument.url}}" download="{{SelectedPatient.summaryDocument.fileName}}">Download {{SelectedPatient.summaryDocument.fileName}}</a>
-                            </div>
+                    <form name="dateRangeForm" class="form-inline">
+                        <div class="form-group" ng-class="{ 'has-error': dateRangeForm.dateRangeFrom.$invalid }">
+                            <label for="dateRangeFrom">From:</label>
+                            <input type="text" class="form-control narrow" id="dateRangeFrom" name="dateRangeFrom" placeholder="yyyy-mm-dd" ng-model="SelectedPatient.dateRange.from" ng-pattern="DateRegExp" />
                         </div>
-                    </div>
+                        <div class="form-group" ng-class="{ 'has-error': dateRangeForm.dateRangeTo.$invalid }">
+                            <label for="dateRangeTo">To:</label>
+                            <input type="text" class="form-control narrow" id="dateRangeTo" name="dateRangeTo" placeholder="yyyy-mm-dd" ng-model="SelectedPatient.dateRange.to" ng-pattern="DateRegExp" />
+                        </div>
+                    </form>
 					<div class="details-part" ng-repeat="part in SelectedPatient.detailsParts">
 						<span class="details-part-data" ng-if="!part.parts">{{part}}</span>
 						<div class="details-subpart" ng-if="part.parts">
@@ -284,8 +265,13 @@
 								<i class="glyphicon-minus" ng-if="!part.collapsed"></i>
 								{{ part.header }}
 							</div>
-							<div class="details-part" ng-if="!part.collapsed" ng-repeat="subPart in part.parts track by $index">
-								<span class="details-part-data">{{ subPart }}</span>
+                            <div ng-show="part.loading">
+                                <img src="Images/CircularProgressAnimation.gif" width="32" />
+                                Loading...
+                            </div>
+							<div class="details-part" ng-if="!part.collapsed && !part.loading" ng-repeat="subPart in part.parts track by $index">
+                                <a href="{{subPart.url}}" download="{{subPart.fileName}}" ng-if="subPart.url">Download {{subPart.fileName}}</a>
+								<span class="details-part-data" ng-if="!subPart.url">{{ subPart }}</span>
 							</div>
 						</div>
 					</div>
