@@ -1,0 +1,10 @@
+﻿<div class="form-group">
+    <button class="inline btn btn-success" ng-disabled="disabled()" ng-click="action()">{{ label }}</button>
+    <div class="inline" style="padding: 0" ng-show="executing">
+        <img src="Images/CircularProgressAnimation.gif" width="32" />
+    </div>
+    <div class="inline alert" role="alert" ng-class="{'alert-warning': failed, 'alert-info': !failed}" ng-show="message">
+        <button type="button" class="close" ng-click="dismissMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+        {{ message }}
+    </div>
+</div>

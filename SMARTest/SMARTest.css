@@ -1,0 +1,17 @@
+﻿/* 
+ * Copyright (c) 2017, CareEvolution Inc (info@careevolution.com)
+ * 
+ * This file is licensed under the MIT License - see License.txt
+ */
+
+.inline
+{
+    display: inline-block;
+    padding: 6px 12px 6px 12px;
+    margin: 0;
+}
+
+.inline .close
+{
+    padding-left: 12px;
+}

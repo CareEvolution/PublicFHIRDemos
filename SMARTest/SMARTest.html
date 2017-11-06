@@ -1,0 +1,105 @@
+﻿<!DOCTYPE html>
+
+<!--
+ * Copyright (c) 2016, CareEvolution Inc (info@careevolution.com)
+ *
+ * This file is licensed under the MIT License - see License.txt
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+    <title>SMARTest</title>
+
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="SMARTest.css">
+    <script src="Scripts/SMARTest.js"></script>
+    <script src="Scripts/SMARTestRegistrations.js"></script>
+</head>
+<body ng-app="SmartestApp" ng-controller="SmartestController">
+    <div class="container full-height">
+
+        <form>
+            <h2>1. Enter your FHIR end point URL</h2>
+            <div class="form-group">
+                <input type="text" class="form-control" id="fhirUrl" ng-model="fhirUrl">
+            </div>
+            <call-button label="'Test'" action="testFhirUrl" disabled="testFhirUrlDisabled" executing="testingFhirUrl" message="testFhirUrlMessage" failed="testFhirUrlFailed"></call-button>
+        </form>
+
+        <form>
+            <h2>2. Register this app on your SMART server</h2>
+            <div class="form-group">
+                <p class="lead">Use <code>{{ redirectUrl }}</code> as the redirect URL</p>
+            </div>
+            <div class="form-group" ng-show="registrations && registrations.length">
+                <label for="registrations">This app is already registered for the following systems:</label>
+                <select class="form-control" id="registrations" ng-model="registration" ng-options="registration as registration.name for registration in registrations">
+                    <option value="">--</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="clientID">Enter the resulting client ID:</label>
+                <input type="text" class="form-control" id="clientID" ng-model="clientID">
+            </div>
+            <div class="form-group">
+                <label for="clientSecret">and the resulting client secret (if any):</label>
+                <input type="text" class="form-control" id="clientSecret" ng-model="clientSecret">
+            </div>
+            <h2>3. Authorize the app</h2>
+            <div class="form-group">
+                <label for="scope">Scope:</label>
+                <input type="text" class="form-control" id="scope" ng-model="scope">
+            </div>
+            <div class="form-group">
+                <label for="scope">Launch:</label>
+                <input type="text" class="form-control" id="scope" ng-model="launch">
+            </div>
+            <call-button label="'Authorize'" action="authorize" disabled="authorizeDisabled" executing="authorizing" message="authorizeMessage" failed="true"></call-button>
+        </form>
+
+        <form ng-show="accessToken">
+            <h2>4. Test FHIR calls</h2>
+            <div class="form-group">
+                <label for="accessToken">Access token:</label>
+                <input type="text" class="form-control" id="accessToken" ng-model="accessToken" readonly>
+            </div>
+            <div class="form-group" ng-show="refreshToken">
+                <label for="refreshToken">Refresh token:</label>
+                <input type="text" class="form-control" id="refreshToken" ng-model="refreshToken" readonly>
+            </div>
+            <call-button label="'Refresh'" action="doRefreshToken" disabled="refreshTokenDisabled" executing="refreshingToken" message="refreshTokenMessage" failed="true" ng-show="refreshToken"></call-button>
+            <div class="form-group" ng-show="patientID">
+                <label for="patientID">Patient ID:</label>
+                <input type="text" class="form-control" id="patientID" ng-model="patientID" readonly>
+            </div>
+            <div class="form-group">
+                <label for="getRelativeUrl">FHIR relative URL:</label>
+                <input type="text" class="form-control" id="getRelativeUrl" ng-model="getRelativeUrl">
+            </div>
+            <call-button label="'FHIR GET'" action="fhirGet" disabled="fhirGetDisabled" executing="fhirGetting" message="fhirGetMessage" failed="true"></call-button>
+            <div class="form-group" ng-show="fhirGetResult">
+                <label for="fhirGetResult">Result:</label>
+                <pre id="fhirGetResult">{{ fhirGetResult }}</pre>
+            </div>
+        </form>
+
+        <div class="logo">
+            <a href="http://careevolution.com" target="_blank">
+                <img src="Images/CareEv-logo-small.png" title="Patient Demographics - Copyright © 2015 CareEvolution Inc." />
+            </a>
+        </div>
+    </div>
+</body>
+</html>
