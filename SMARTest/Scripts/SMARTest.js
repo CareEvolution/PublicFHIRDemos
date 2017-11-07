@@ -160,7 +160,7 @@
 			);
 		}
 
-		$scope.fhirGetRelativeUrl = null;
+		$scope.fhirGetRelativeUrl = $scope.patientID ? "Patient/" + $scope.patientID : "Patient";
 		$scope.fhirGetMessage = null;
 		$scope.fhirGetting = false;
 		$scope.fhirGetDisabled = function() {
@@ -168,6 +168,7 @@
 		};
 		$scope.fhirGet = function() {
 			$scope.fhirGetMessage = null;
+			$scope.fhirGetResult = null;
 			$scope.fhirGetting = true;
 			var fhirUrl = $scope.fhirUrl + "/" + $scope.fhirGetRelativeUrl;
 			$http({
@@ -181,10 +182,10 @@
 				$scope.fhirGetting = false;
 				$scope.fhirGetResult = JSON.stringify(data, null, 4);
 			}).error(function(data, status) {
-				$scope.getting = false;
+				$scope.fhirGetting = false;
 				var getMessage = "Get '" + fhirUrl + "' failed";
-				if (data && data.issue && data.issue.length > 0 && data.issue[0].details) {
-					$scope.fhirGetMessage = getMessage + ": " + data.issue[0].details;
+				if (data && data.issue && data.issue.length && data.issue[0].details) {
+					$scope.fhirGetMessage = getMessage + ": " + data.issue[0].details.text;
 				} else if (status === 0) {
 					$scope.fhirGetMessage = getMessage + ": cannot connect";
 				} else {

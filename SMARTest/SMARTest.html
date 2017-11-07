@@ -28,6 +28,17 @@
     <script src="Scripts/SMARTestRegistrations.js"></script>
 </head>
 <body ng-app="SmartestApp" ng-controller="SmartestController">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="http://careevolution.com" target="_blank">
+                    <img src="Images/CareEv-logo-small.png" title="SMARTest - Copyright © 2017 CareEvolution Inc." />
+                </a>
+            </div>
+            <h1 class="navbar-text">SMARTest<small> &ndash; test SMART-on-FHIR servers</small></h1>
+        </div>
+    </nav>
+    
     <div class="container full-height">
 
         <form>
@@ -39,38 +50,34 @@
         </form>
 
         <form>
-            <h2>2. Register this app on your SMART server</h2>
+            <h2>2. App registration</h2>
             <div class="form-group">
-                <p class="lead">Use <code>{{ redirectUrl }}</code> as the redirect URL</p>
+                <p class="lead">If your system is pre-registered select it, otherwise register this app on your SMART server using <code>{{ redirectUrl }}</code> as the redirect URL and enter the resulting client ID and client secret (if any)</p>
             </div>
             <div class="form-group" ng-show="registrations && registrations.length">
-                <label for="registrations">This app is already registered for the following systems:</label>
+                <label for="registrations">Pre-registered systems:</label>
                 <select class="form-control" id="registrations" ng-model="registration" ng-options="registration as registration.name for registration in registrations">
-                    <option value="">--</option>
+                    <option value="">---</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="clientID">Enter the resulting client ID:</label>
+                <label for="clientID">Client ID:</label>
                 <input type="text" class="form-control" id="clientID" ng-model="clientID">
             </div>
             <div class="form-group">
-                <label for="clientSecret">and the resulting client secret (if any):</label>
+                <label for="clientSecret">Client secret:</label>
                 <input type="text" class="form-control" id="clientSecret" ng-model="clientSecret">
             </div>
             <h2>3. Authorize the app</h2>
             <div class="form-group">
-                <label for="scope">Scope:</label>
+                <label for="scope">Scopes:</label>
                 <input type="text" class="form-control" id="scope" ng-model="scope">
             </div>
             <div class="form-group">
-                <label for="scope">Launch:</label>
+                <label for="scope">Launch (used only if there is a <code>launch</code> scope):</label>
                 <input type="text" class="form-control" id="scope" ng-model="launch">
             </div>
             <call-button label="'Authorize'" action="authorize" disabled="authorizeDisabled" executing="authorizing" message="authorizeMessage" failed="true"></call-button>
-        </form>
-
-        <form ng-show="accessToken">
-            <h2>4. Test FHIR calls</h2>
             <div class="form-group">
                 <label for="accessToken">Access token:</label>
                 <input type="text" class="form-control" id="accessToken" ng-model="accessToken" readonly>
@@ -84,9 +91,13 @@
                 <label for="patientID">Patient ID:</label>
                 <input type="text" class="form-control" id="patientID" ng-model="patientID" readonly>
             </div>
+        </form>
+
+        <form ng-show="accessToken">
+            <h2>4. Test FHIR calls</h2>
             <div class="form-group">
-                <label for="getRelativeUrl">FHIR relative URL:</label>
-                <input type="text" class="form-control" id="getRelativeUrl" ng-model="getRelativeUrl">
+                <label for="fhirGetRelativeUrl">FHIR relative URL:</label>
+                <input type="text" class="form-control" id="fhirGetRelativeUrl" ng-model="fhirGetRelativeUrl">
             </div>
             <call-button label="'FHIR GET'" action="fhirGet" disabled="fhirGetDisabled" executing="fhirGetting" message="fhirGetMessage" failed="true"></call-button>
             <div class="form-group" ng-show="fhirGetResult">
@@ -95,11 +106,6 @@
             </div>
         </form>
 
-        <div class="logo">
-            <a href="http://careevolution.com" target="_blank">
-                <img src="Images/CareEv-logo-small.png" title="Patient Demographics - Copyright © 2015 CareEvolution Inc." />
-            </a>
-        </div>
     </div>
 </body>
 </html>
