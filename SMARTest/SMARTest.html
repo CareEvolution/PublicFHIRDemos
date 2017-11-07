@@ -78,7 +78,7 @@
                 <input type="text" class="form-control" id="scope" ng-model="launch">
             </div>
             <call-button label="'Authorize'" action="authorize" disabled="authorizeDisabled" executing="authorizing" message="authorizeMessage" failed="true"></call-button>
-            <div class="form-group">
+            <div class="form-group" ng-show="accessToken">
                 <label for="accessToken">Access token:</label>
                 <input type="text" class="form-control" id="accessToken" ng-model="accessToken" readonly>
             </div>

@@ -79,7 +79,7 @@
 		$scope.scope = sessionStorage[SESSION_SCOPE] || null;
 		$scope.launch = sessionStorage[SESSION_LAUNCH] || null;
 		$scope.registrations = SMARTestRegistrations;
-		$scope.registration = null;
+		$scope.registration = findRegistrationByClientID();
 		$scope.$watch("registration", function(newRegistration, oldRegistration) {
 			if (newRegistration !== oldRegistration) {
 				if (newRegistration) {
@@ -220,6 +220,20 @@
 					}
 				);
 			}
+		}
+
+		function findRegistrationByClientID() {
+			var registrations = $scope.registrations;
+			if (!registrations || !registrations.length || !$scope.clientID) {
+				return null;
+			}
+			for (var i = 0; i < registrations.length; i++) {
+				var registration = registrations[i];
+				if (registration && registration.clientID === $scope.clientID) {
+					return registration;
+				}
+			}
+			return null;
 		}
 
 		function setAccessToken(token, refreshToken, patientID) {
