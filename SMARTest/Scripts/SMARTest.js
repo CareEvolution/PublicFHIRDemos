@@ -113,6 +113,7 @@
 					redirectParameters = appendParameter(redirectParameters, "redirect_uri", $scope.redirectUrl);
 					redirectParameters = appendParameter(redirectParameters, "aud", $scope.fhirUrl);
 					redirectParameters = appendParameter(redirectParameters, "scope", $scope.scope);
+                    redirectParameters = appendParameter(redirectParameters, "state", "dummy-state");
 					if (hasScope($scope.scope, "launch")) {
 						redirectParameters = appendParameter(redirectParameters, "launch", $scope.launch);
 					}
