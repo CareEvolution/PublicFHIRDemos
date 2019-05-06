@@ -1,0 +1,45 @@
+﻿/* 
+ * Copyright (c) 2019, CareEvolution Inc (mimo@careevolution.com)
+ * 
+ * This file is licensed under the MIT license - see License.txt
+ */
+
+/*
+ * Base structure
+ */
+
+html, body
+{
+    height: 100%;
+}
+
+pre
+{
+    display: block;
+    padding: 9.5px;
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.428571429;
+    word-break: break-all;
+    word-wrap: break-word;
+    color: #333333;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+    pre code
+    {
+        padding: 0;
+        font-size: inherit;
+        color: inherit;
+        white-space: pre-wrap;
+        background-color: transparent;
+        border-radius: 0;
+    }
+
+.pre-scrollable
+{
+    max-height: 340px;
+    overflow-y: scroll;
+}

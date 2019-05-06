@@ -1,0 +1,120 @@
+﻿<!DOCTYPE html>
+
+<!--
+ * Copyright (c) 2019, CareEvolution Inc (info@careevolution.com)
+ *
+ * This file is licensed under the MIT License - see License.txt
+-->
+
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+    <title>FHIR subscriber</title>
+    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.28/angular.js"></script>
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script src="Scripts/SmartApps.js"></script>
+    <script src="Scripts/Subs.js"></script>
+
+    <link rel="stylesheet" href="Subs.css" />
+</head>
+<body ng-app="SubsApp" ng-controller="SubsController">
+
+    <div class="alert alert-danger" role="alert" ng-show="StartupErrorMessage">
+        {{ StartupErrorMessage }}
+    </div>
+
+    <form>
+        <div class="form-group">
+            <label>FHIR end point</label>
+            <div>
+                <p class="form-control-static">{{ FhirUrl }}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Web socket end point</label>
+            <div>
+                <p class="form-control-static">{{ WebSocketUrl }}</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="input-criteria">Criteria</label>
+            <input type="text" class="form-control" id="input-criteria" ng-model="Criteria" />
+        </div>
+
+        <button type="submit" class="btn btn-default" ng-click="search()" ng-disabled="!Criteria || Executing">Search</button>
+        <button type="button" class="btn" ng-click="subscribe()" ng-disabled="!Criteria || Executing">Subscribe</button>
+
+        <div class="navbar-alert-right alert alert-warning" role="alert" ng-show="ErrorMessage">
+            <button type="button" class="close" ng-click="dismissErrorMessage()"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            {{ ErrorMessage }}
+        </div>
+
+    </form>
+
+    <div ng-show="Subscriptions">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Criteria</th>
+                    <th>Pings</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="subscription in Subscriptions">
+                    <td>
+                        {{ subscription.id }}
+                    </td>
+                    <td>
+                        {{ subscription.criteria }}
+                    </td>
+                    <td>
+                        {{ subscription.count }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div ng-show="ResultEntries">
+        <div ng-repeat="entry in ResultEntries">
+            <div>
+                <button class="btn btn-link" ng-hide="entry.expanded" ng-click="setExpanded(entry, true)" title="Expand"><span class="glyphicon glyphicon-triangle-right"></span></button>
+                <button class="btn btn-link" ng-show="entry.expanded" ng-click="setExpanded(entry, false)" title="Collapse"><span class="glyphicon glyphicon-triangle-bottom"></span></button>
+                {{ entry.title }}
+            </div>
+            <pre class="pre-scrollable" ng-show="entry.expanded">{{ entry.content }}</pre>
+        </div>
+    </div>
+
+    <div ng-show="ListPatients">
+        <p>Patients</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="patient in ListPatients">
+                    <td>
+                        {{ patient.name }}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
