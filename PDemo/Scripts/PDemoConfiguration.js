@@ -6,8 +6,8 @@
 
 var PDemoConfiguration = {
 	// Client identifier used by the OAuth2 protocol - it must be accepted by the OAuth2 authorization server
-	// clientID: "6440eab7-6ba4-4697-ac6d-5b0f78b409d0", // Epic
-	clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",
+    clientID: "6440eab7-6ba4-4697-ac6d-5b0f78b409d0", // Epic - https://open-ic.epic.com/Argonaut/api/FHIR/Argonaut
+    // clientID: "ec1bf97f-0eed-4e48-9869-89adba038d8c",   // SMART sandbox - https://sb-fhir-dstu2.smarthealthit.org/smartdstu2/open
 	
 	version: "2.1.0",
 
