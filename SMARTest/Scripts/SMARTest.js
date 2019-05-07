@@ -46,7 +46,7 @@
 		var SESSION_PATIENT_ID = "patientID";
 		var SESSION_REFRESH_TOKEN = "refreshToken";
 
-		$scope.redirectUrl = window.location.href.substring(0, window.location.href.length - window.location.search.length);
+        $scope.redirectUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
 
 		$scope.fhirUrl = sessionStorage[SESSION_FHIR_URL] || null;
 		$scope.testFhirUrlMessage = null;
