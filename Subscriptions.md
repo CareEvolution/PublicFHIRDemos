@@ -1,6 +1,6 @@
 # Data set based subscriptions
 Data sets are list of resources, with additional properties associated to each resource. They are represented by List - 
-like this data set of admitted patients with their primary care physician as a property:
+like this data set of admitted patients with their primary care physician and complaint as properties:
 ```json
 {
   "id": "admissions",
@@ -28,8 +28,29 @@ like this data set of admitted patients with their primary care physician as a p
               }
             }
           ]
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/listProperty",
+          "extension": [
+            {
+              "url": "name",
+              "valueString": "complaint"
+            },
+            {
+              "url": "value",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://snomed.info/sct",
+                    "code": "386661006",
+                    "display": "Fever"
+                  }
+                ]
+              }
+            }
+          ]
         }
-      ]
+	  ]
     }
   ],
   "extension": [
@@ -42,7 +63,20 @@ like this data set of admitted patients with their primary care physician as a p
 		},
 		{
 			"url": "type",
-			"valueCode": "reference"
+			"valueCode": "Reference"
+		}
+	  ]
+	},
+	{
+	  "url": "http://hl7.org/fhir/StructureDefinition/listPropertyDefinition",
+	  "extension": [
+		{
+			"url": "name",
+			"valueString": "complaint"
+		},
+		{
+			"url": "type",
+			"valueCode": "CodeableConcept"
 		}
 	  ]
 	}
