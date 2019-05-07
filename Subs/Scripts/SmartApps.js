@@ -45,7 +45,7 @@
 		var SESSION_PATIENT_ID = "patientID";
 
 		function getRedirectUrl() {
-			return window.location.href.substring(0, window.location.href.length - window.location.search.length)
+            return window.location.href.substring(0, window.location.href.length - window.location.search.length);
 		}
 
 		function setAuthorizationToken(token) {
@@ -116,7 +116,7 @@
 								var data = {
 									grant_type: "authorization_code",
 									code: code,
-									redirect_uri: getRedirectUrl(),
+									redirect_uri: getRedirectUrl()
 								}; 
 								if (!clientSecret) {
 									data.client_id = clientID;
@@ -153,7 +153,7 @@
 						setAuthorizationToken(null);
 						$http({
 							url: fhirUrl + "/metadata",
-							method: "GET",
+							method: "GET"
 						}).success(function(data) {
 							var authorizeUrl = null;
 							if (data && data.rest && data.rest.length > 0 && data.rest[0].security && data.rest[0].security.extension) {
