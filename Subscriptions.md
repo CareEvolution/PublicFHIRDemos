@@ -101,7 +101,7 @@ Subscriptions can be to the entire data set:
   }
 }
 ```
-that fire when the data set changes = the List change = resources are added or removed from it 
+that fires when the data set changes = the List change = resources are added or removed from it 
 or any of their associated properties change.
 
 Subscriptions can be to a specific entry of a data set:
