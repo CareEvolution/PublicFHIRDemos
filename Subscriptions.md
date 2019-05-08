@@ -3,11 +3,16 @@ Data sets are list of resources, with additional properties associated to each r
 like this data set of admitted patients with their primary care physician and complaint as properties:
 ```json
 {
-  "id": "admissions",
   "resourceType": "List",
   "status": "active",
   "mode": "working",
   "title": "Admissions in last 24 hours",
+  "code": {
+    "coding": [{
+      "system": "http://terminology.hl7.org/CodeSystem/list-use-codes",
+      "code": "data-set"
+    }]
+  },
   "entry": [
     {
       "item": {
@@ -39,51 +44,51 @@ like this data set of admitted patients with their primary care physician and co
             {
               "url": "value",
               "valueCodeableConcept": {
-                "coding": [
-                  {
-                    "system": "http://snomed.info/sct",
-                    "code": "386661006",
-                    "display": "Fever"
-                  }
-                ]
+                "coding": [{
+                  "system": "http://snomed.info/sct",
+                  "code": "386661006",
+                  "display": "Fever"
+                }]
               }
             }
           ]
         }
-	  ]
+      ]
     }
   ],
   "extension": [
-	{
-	  "url": "http://hl7.org/fhir/StructureDefinition/listPropertyDefinition",
-	  "extension": [
-		{
-			"url": "name",
-			"valueString": "pcp"
-		},
-		{
-			"url": "type",
-			"valueCode": "Reference"
-		}
-	  ]
-	},
-	{
-	  "url": "http://hl7.org/fhir/StructureDefinition/listPropertyDefinition",
-	  "extension": [
-		{
-			"url": "name",
-			"valueString": "complaint"
-		},
-		{
-			"url": "type",
-			"valueCode": "CodeableConcept"
-		}
-	  ]
-	}
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/listPropertyDefinition",
+      "extension": [
+        {
+          "url": "name",
+          "valueString": "pcp"
+        },
+        {
+          "url": "type",
+          "valueCode": "Reference"
+        }
+      ]
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/listPropertyDefinition",
+      "extension": [
+        {
+          "url": "name",
+          "valueString": "complaint"
+        },
+        {
+          "url": "type",
+          "valueCode": "CodeableConcept"
+        }
+      ]
+    }
   ]
 }
 ```
-Note how the List contains both the definition of the properties it supports, and the value of those properties for each entry.
+Note how the List contains both the definition of the properties it supports, and the value of those properties for each entry. 
+
+Data set lists are identified by a `data-set` code (see example above) - so that a client can get a list of all the available data sets. 
 
 Subscriptions can be to the entire data set:
 ```json
