@@ -10,7 +10,7 @@ for more authentication information: https://github.com/HL7/bulk-data/blob/maste
 
 ## Basic usage
 
-In Visual Studio (or preferred editor/command line runner), open the ExampleFhirClient program and run it.  The output will display in the open dialog box.
+Download the jwt.careevolution.com certificate and install locally.  In Visual Studio (or preferred editor/command line runner), open the ExampleFhirClient program and run it.  The output will display in the open dialog box.
 
 The Examples Include:
 
