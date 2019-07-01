@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens;
+using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -9,15 +10,17 @@ namespace ExampleFhirClient
 {
 	static class AccessTokenHelper
 	{
-		public static string GetAccessToken( Uri baseAddress )
+		public static string GetAccessToken( Uri fhirServer )
 		{
-			var cert = GetClientCertificate( "CN=jwt.careevolution.com" );
-			var clientId = "JWTClientCredentials";
-			var tokenvalue = CreateClientCredentialsJWT( cert, clientId, baseAddress );
+			var httpClient = new HttpClient { BaseAddress = fhirServer };
 
-			using ( var client = new HttpClient { BaseAddress = baseAddress } )
+			var cert = GetClientCertificate();
+			
+			var tokenvalue = CreateClientCredentialsJWT( cert, OauthClientId, fhirServer );
+
+			using ( httpClient )
 			{
-				var grantResponse = RequestClientCredentialsJWT( client, clientId, tokenvalue );
+				var grantResponse = RequestClientCredentialsJWT( httpClient, OauthClientId, tokenvalue );
 
 				var responseData = grantResponse.Content.ReadAsAsync<Dictionary<string, object>>().Result;
 				if ( !responseData.TryGetValue( "access_token", out var accessToken ) )
@@ -28,22 +31,26 @@ namespace ExampleFhirClient
 			}
 		}
 
-		private static X509Certificate2 GetClientCertificate( string certName )
+		private static X509Certificate2 GetClientCertificate()
 		{
-			var store = new CertificateStore();
-			var cert = store.GetMostRecentDistinguishedNameCertificate( StoreName.My, StoreLocation.LocalMachine, certName );
-			return cert;
-		}
+			var store = new X509Store( StoreName.My, StoreLocation.LocalMachine );
+			try
+			{
+				store.Open(OpenFlags.ReadOnly);
 
-		private static string CreateClientCredentialsJWT( X509Certificate2 signingCertificate, string clientId, Uri baseAddress, string audience = null, string[] omitHeaders = null )
+				var matchingCerts = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, CertName, true).Cast<X509Certificate2>();
+				return matchingCerts.FirstOrDefault( certificate => DateTime.Now >= certificate.NotBefore && DateTime.Now <= certificate.NotAfter );
+			}
+			finally
+			{
+				store.Close();
+			}
+		}
+		
+		private static string CreateClientCredentialsJWT( X509Certificate2 signingCertificate, string clientId, Uri baseAddress )
 		{
 			var creds = new X509SigningCredentials( signingCertificate );
-			if ( audience == null )
-			{
-				audience = baseAddress.ToString();
-			}
-
-			audience += OpenIDConnectToken;
+			
 			var issued = DateTime.UtcNow;
 			var expires = issued.AddMinutes( 90 );
 			var claims = new List<Claim>
@@ -51,17 +58,11 @@ namespace ExampleFhirClient
 				new Claim( "sub", clientId ),
 				new Claim( "jti", Guid.NewGuid().ToString() )
 			};
+			var audience = baseAddress + OpenIDConnectToken;
 			var payload = new JwtPayload( clientId, audience, claims, issued, expires );
 
 			var header = new JwtHeader( creds );
-			if ( omitHeaders != null )
-			{
-				foreach ( var omitHeader in omitHeaders )
-				{
-					header.Remove( omitHeader );
-				}
-			}
-
+			
 			var token = new JwtSecurityToken( header, payload );
 			var tokenEncoded = new JwtSecurityTokenHandler().WriteToken( token );
 
@@ -84,5 +85,7 @@ namespace ExampleFhirClient
 		}
 
 		private static readonly string OpenIDConnectToken = $"identityserver/connect/token";
+		private static readonly string CertName = "CN=jwt.careevolution.com";
+		private static readonly string OauthClientId = "JWTClientCredentials";
 	}
 }
