@@ -1,16 +1,16 @@
 # ExampleFhirClient
 
-Very Basic Simple C# command line program to search, read and post information to/from the CareEvolution FHIR server.
+Very Basic Simple Microsoft C# command line program to search, read and post information to/from the CareEvolution FHIR server.
 
 ## Authentication
    
-This application is using a JWT token to request an OAuth 2.0 access token and client authentication.  The application uses the jwt.careevolution.com certificate and expects the OAuth client configruation (id: JWTClientCredentials).  The signing certificate is available here: https://fhir.careevolution.com/jwt.pfx with password == `jwt.careevolution.com`
+This application is using a JWT token to request an OAuth 2.0 access token and client authentication.  The application uses the jwt.careevolution.com certificate and expects the OAuth client configruation (id: JWTClientCredentials).  The signing certificate is available here: https://fhir.careevolution.com/jwt.pfx with password == `jwt.careevolution.com`.  In a real production environment you would provide your own signing certificate and provide CareEvolution it's public key to configure an Oauth Client for your authorization and access token.
 
 for more authentication information: https://github.com/HL7/bulk-data/blob/master/spec/authorization/index.md#obtaining-an-access-token
 
 ## Basic usage
 
-Download the jwt.careevolution.com certificate and install locally.  In Visual Studio (or preferred editor/command line runner), open the ExampleFhirClient program and run it.  The output will display in the open dialog box.
+Download the jwt.careevolution.com certificate and import it into your local computer certificate store under Trusted People.  In Visual Studio (or preferred C# editor), open the ExampleFhirClient program and run it.  The output will display in the open dialog box.
 
 The Examples Include:
 
