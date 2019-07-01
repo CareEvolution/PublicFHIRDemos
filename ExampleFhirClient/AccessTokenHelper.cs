@@ -5,22 +5,23 @@ using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using Hl7.Fhir.Model;
 
 namespace ExampleFhirClient
 {
 	static class AccessTokenHelper
 	{
-		public static string GetAccessToken( Uri fhirServer )
+		public static string GetAccessToken(Uri fhirServer, string tokenEndpoint)
 		{
 			var httpClient = new HttpClient { BaseAddress = fhirServer };
 
 			var cert = GetClientCertificate();
 			
-			var tokenvalue = CreateClientCredentialsJWT( cert, OauthClientId, fhirServer );
+			var tokenvalue = CreateClientCredentialsJWT( cert, OauthClientId, tokenEndpoint );
 
 			using ( httpClient )
 			{
-				var grantResponse = RequestClientCredentialsJWT( httpClient, OauthClientId, tokenvalue );
+				var grantResponse = RequestClientCredentialsJWT( httpClient, OauthClientId, tokenvalue, tokenEndpoint );
 
 				var responseData = grantResponse.Content.ReadAsAsync<Dictionary<string, object>>().Result;
 				if ( !responseData.TryGetValue( "access_token", out var accessToken ) )
@@ -47,7 +48,7 @@ namespace ExampleFhirClient
 			}
 		}
 		
-		private static string CreateClientCredentialsJWT( X509Certificate2 signingCertificate, string clientId, Uri baseAddress )
+		private static string CreateClientCredentialsJWT( X509Certificate2 signingCertificate, string clientId, string audience )
 		{
 			var creds = new X509SigningCredentials( signingCertificate );
 			
@@ -58,7 +59,6 @@ namespace ExampleFhirClient
 				new Claim( "sub", clientId ),
 				new Claim( "jti", Guid.NewGuid().ToString() )
 			};
-			var audience = baseAddress + OpenIDConnectToken;
 			var payload = new JwtPayload( clientId, audience, claims, issued, expires );
 
 			var header = new JwtHeader( creds );
@@ -69,7 +69,7 @@ namespace ExampleFhirClient
 			return tokenEncoded;
 		}
 
-		private static HttpResponseMessage RequestClientCredentialsJWT( HttpClient client, string clientId, string tokenvalue )
+		private static HttpResponseMessage RequestClientCredentialsJWT( HttpClient client, string clientId, string tokenvalue, string tokenEndpoint )
 		{
 			var grantRequest = new Dictionary<string, string>
 			{
@@ -80,11 +80,10 @@ namespace ExampleFhirClient
 				{ "scope", "system/*.read" },
 			};
 
-			var grantResponse = client.PostAsync( OpenIDConnectToken, new FormUrlEncodedContent( grantRequest ) ).Result;
+			var grantResponse = client.PostAsync( tokenEndpoint, new FormUrlEncodedContent( grantRequest ) ).Result;
 			return grantResponse;
 		}
 
-		private static readonly string OpenIDConnectToken = $"identityserver/connect/token";
 		private static readonly string CertName = "CN=jwt.careevolution.com";
 		private static readonly string OauthClientId = "JWTClientCredentials";
 	}

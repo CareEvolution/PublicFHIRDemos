@@ -40,9 +40,13 @@ namespace ExampleFhirClient
 				1.  POST the DiagnosticReport resource json string to FhirEndpoint .../api/fhir/DiagnosticReport
 
 			*/
-			var accessToken = AccessTokenHelper.GetAccessToken( FhirServer );
 			var fhirEndPoint = FhirServer + "api/fhir";
-			var fhirClient = new FhirRest.FhirDstu2Client( fhirEndPoint );
+			var fhirClient = new FhirRest.FhirDstu2Client(fhirEndPoint);
+			var conformance = fhirClient.Metadata();
+			var tokenEndpoint = conformance.Rest[0].Security.Extension[0].Extension.FirstOrDefault( e => e.Url.Equals( "token" ) )?.Value;
+
+			var accessToken = AccessTokenHelper.GetAccessToken( FhirServer, tokenEndpoint?.ToString() );
+			
 			fhirClient.OnBeforeRequest += ( object sender, FhirRest.BeforeRequestEventArgs eventArgs ) =>
 			{
 				eventArgs.RawRequest.Headers.Add( "Authorization", $"Bearer {accessToken}" );
