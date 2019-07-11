@@ -161,3 +161,6 @@ External/[Nn]uget.exe
 
 # VS14 junk
 *.ide/
+
+# VS 15 junk
+v15/
