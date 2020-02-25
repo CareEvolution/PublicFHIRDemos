@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+
+<!--
+ * Copyright (c) 2020 CareEvolution Inc (info@careevolution.com)
+ *
+ * This file is licensed under the MIT License - see License.txt
+-->
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="icon" href="favicon.ico" type="image/x-icon" />
+
+	<title>MRP</title>
+	<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+
+	<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.js"></script>
+
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+    <script src="Scripts/SmartApps.js"></script>
+    <script src="Scripts/MRP.js"></script>
+
+	<link rel="stylesheet" href="MRP.css" />
+</head>
+<body ng-app="MRPApp" ng-controller="MRPController">
+
+    <div class="container-fluid full-height" ng-cloak>
+
+        <div class="alert alert-danger" role="alert" ng-show="StartupErrorMessage">
+            {{ StartupErrorMessage }}
+        </div>
+
+        <div class="row full-height" ng-show="StartupCompleted">
+            <h2><span ng-click="refresh()" class="glyphicon glyphicon-refresh" title="Refresh" aria-hidden="true"></span> Medication reconciliations</h2>
+
+            <div ng-show="Searching">
+                <img src="Images/CircularProgressAnimation.gif" width="32" />
+                Searching...
+            </div>
+
+            <div ng-show="!Searching" ng-repeat="reconciliation in Reconciliations">
+                {{ reconciliation.when | date:'fullDate' }}<span ng-if="reconciliation.where"> at {{ reconciliation.where }}</span><span ng-if="reconciliation.by"> by {{ reconciliation.by }}</span>
+            </div>
+
+            <div ng-show="!(Reconciliations.length || Searching)">
+                [ None ]
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+</html>
