@@ -6,12 +6,11 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Hl7.Fhir.Model;
 using Hl7.Fhir.Rest;
+using Hl7.Fhir.Utility;
 using Newtonsoft.Json.Linq;
 using FhirModel = Hl7.Fhir.Model;
 using FhirModel4 = Hl7.Fhir.Model.R4;
-using FhirRest = Hl7.Fhir.Rest;
 using Task = System.Threading.Tasks.Task;
 
 namespace ExampleFhirClient
@@ -28,7 +27,7 @@ namespace ExampleFhirClient
 
 			The example code below illustrates how to:
 
-				using FhirRest.FhirClient: 
+				using FhirClient: 
 				1.  search for patients
 				2.  post a resource (DiagnosticReport) for an existing patient
 				3.  use a FHIR transaction( http://hl7.org/fhir/R4/http.html#transaction ) to POST a FHIR bundle containing 
@@ -41,17 +40,17 @@ namespace ExampleFhirClient
 
 			*/
 			var fhirEndPoint = FhirServer + "api/fhir-r4";
-			var fhirClient = new FhirRest.FhirR4Client(fhirEndPoint);
+			var fhirClient = new FhirR4Client(fhirEndPoint);
 			var conformance = fhirClient.Metadata();
 			var tokenEndpoint = conformance.Rest[0].Security.Extension[0].Extension.FirstOrDefault( e => e.Url.Equals( "token" ) )?.Value;
 
 			var accessToken = AccessTokenHelper.GetAccessToken( FhirServer, tokenEndpoint?.ToString() );
 			
-			fhirClient.OnBeforeRequest += ( object sender, FhirRest.BeforeRequestEventArgs eventArgs ) =>
+			fhirClient.OnBeforeRequest += ( object sender, BeforeRequestEventArgs eventArgs ) =>
 			{
 				eventArgs.RawRequest.Headers.Add( "Authorization", $"Bearer {accessToken}" );
 			};
-			fhirClient.OnAfterResponse += ( object sender, FhirRest.AfterResponseEventArgs e ) =>
+			fhirClient.OnAfterResponse += ( object sender, AfterResponseEventArgs e ) =>
 			{
 				Console.WriteLine( "Received response with status: " + e.RawResponse.StatusCode );
 			};
@@ -72,21 +71,21 @@ namespace ExampleFhirClient
 			Console.ReadLine();
 		}
 
-		private static List<FhirModel4.Patient> GetPatients( FhirRest.FhirR4Client fhirClient, string family )
+		private static List<FhirModel4.Patient> GetPatients( FhirR4Client fhirClient, string family )
 		{
-			var srch = new FhirRest.SearchParams()
+			var srch = new SearchParams()
 				.Where( $"family={family}" )
 				.LimitTo( 20 )
 				.SummaryOnly()
 				.OrderBy( "birthdate",
-					FhirRest.SortOrder.Descending );
+					SortOrder.Descending );
 
 			var bundle = fhirClient.Search<FhirModel4.Patient>( srch );
 
 			return bundle.Entry.Select( b => b.Resource as FhirModel4.Patient ).ToList();
 		}
 
-		private static async Task RuleDataAsync( FhirRest.FhirR4Client fhirClient )
+		private static async Task RuleDataAsync( FhirR4Client fhirClient )
 		{
 			var srchParams = new SearchParams()
 				.Where( "title=All Labs" )
@@ -99,7 +98,7 @@ namespace ExampleFhirClient
 			var list = bundle.Entry.FirstOrDefault()?.Resource as FhirModel4.List; 
 			if ( list != null )
 			{
-				var listResource = fhirClient.Read<FhirModel4.List>( FhirRest.ResourceIdentity.Build( "List", list.Id ) );
+				var listResource = fhirClient.Read<FhirModel4.List>( ResourceIdentity.Build( "List", list.Id ) );
 
 				Console.WriteLine($"List Summary Narrative: {listResource.Text.Div}");
 				var tasks = new List<Task<FhirModel4.Patient>>();
@@ -120,14 +119,14 @@ namespace ExampleFhirClient
 			}
 		}
 
-		private static void PatientData( FhirRest.FhirR4Client fhirClient )
+		private static void PatientData( FhirR4Client fhirClient )
 		{
 			// search for patient as we don't have a patient ID
 			var patients = GetPatients( fhirClient, "JEPPESEN" );
 
 			if ( !patients.Any() ) return;
 
-			var patientResource = fhirClient.Read<FhirModel4.Patient>( FhirRest.ResourceIdentity.Build( "Patient", patients.FirstOrDefault()?.Id ) );
+			var patientResource = fhirClient.Read<FhirModel4.Patient>( ResourceIdentity.Build( "Patient", patients.FirstOrDefault()?.Id ) );
 			Console.WriteLine( $" patient name =" + patientResource.Name.FirstOrDefault());
 			Console.WriteLine( $" patient birthdate =" + patientResource.BirthDate );
 			Console.WriteLine( $" patient gender =" + patientResource.Gender );
@@ -139,7 +138,7 @@ namespace ExampleFhirClient
 			FetchDiagnosticReports( fhirClient, query );
 		}
 
-		private static void FetchClaims( FhirRest.FhirR4Client fhirClient, string [] query )
+		private static void FetchClaims( FhirR4Client fhirClient, string [] query )
 		{
 			var result = fhirClient.Search<FhirModel4.Claim>( query, null, 50 );
 
@@ -157,10 +156,13 @@ namespace ExampleFhirClient
 					var service = ( claim.Item.FirstOrDefault()?.ProductOrService as FhirModel.CodeableConcept )?.Coding.FirstOrDefault()?.Code;
 					Console.WriteLine( $"Service: { service }" );
 
-					var extension = claim.GetExtensions( "http://careevolution.com/fhirextensions#claim-status" ).FirstOrDefault();
-					var status = ( (FhirModel.CodeableConcept) extension?.Value )?.Coding.FirstOrDefault()?.Display;
-					Console.WriteLine(
-						$"Claim Status: {status}" );
+					var status = claim.Status;
+					if (status != null)
+					{
+						Console.WriteLine(
+						$"Claim Status: {((FhirModel.FinancialResourceStatusCodes)status).GetLiteral() }");
+					}
+					
 				}
 
 				Console.WriteLine( "Fetching more results..." );
@@ -170,7 +172,7 @@ namespace ExampleFhirClient
 			Console.WriteLine( "No more claims." );
 		}
 
-		private static void FetchDiagnosticReports( FhirRest.FhirR4Client fhirClient, string[] query )
+		private static void FetchDiagnosticReports( FhirR4Client fhirClient, string[] query )
 		{
 			var result = fhirClient.Search<FhirModel4.DiagnosticReport>( query, null, 50 );
 
@@ -198,7 +200,7 @@ namespace ExampleFhirClient
 						}
 						else
 						{
-							Console.WriteLine( $"Observation value: {(( FhirString )resource.Value ).Value}" );
+							Console.WriteLine( $"Observation value: {(( FhirModel.FhirString )resource.Value ).Value}" );
 						}
 						
 					}
@@ -212,14 +214,14 @@ namespace ExampleFhirClient
 			Console.WriteLine( "No more reports." );
 		}
 
-		private static void PostDiagnosticReportForExistingPatient( FhirRest.FhirR4Client fhirClient, List<FhirModel4.Patient> patients )
+		private static void PostDiagnosticReportForExistingPatient( FhirR4Client fhirClient, List<FhirModel4.Patient> patients )
 		{
 			foreach ( var patient in patients )
 			{
 				var writeable = patient.Identifier.Any( i => i.System == FhirIdSystem );
 				if ( !writeable ) continue;
 
-				var report = CreateReport( DateTime.Now );
+				var report = CreateReport( DateTimeOffset.Now );
 				report.Subject = new FhirModel.ResourceReference
 				{
 					Reference = "Patient/" + patient.Id
@@ -230,11 +232,11 @@ namespace ExampleFhirClient
 		}
 
 		// post via fhir rest client using bundle transaction returns location url with newly created ID's. 
-		private static FhirModel4.Patient PostDiagnosticReportForNewPatient( FhirRest.FhirR4Client fhirClient )
+		private static FhirModel4.Patient PostDiagnosticReportForNewPatient( FhirR4Client fhirClient )
 		{
 			var patientIdentifier = Guid.NewGuid().ToString();
 			var patient = CreatePatient( patientIdentifier );
-			var report = CreateReport( DateTime.Now );
+			var report = CreateReport( DateTimeOffset.Now );
 
 			// create bundle transaction
 			var bundle = new FhirModel4.Bundle { Type = FhirModel.BundleType.Transaction };
@@ -245,8 +247,6 @@ namespace ExampleFhirClient
 			var reportEntry = CreateTransactionBundleEntry( report, "DiagnosticReport", FhirModel.HTTPVerb.POST );
 			bundle.Entry.Add( patientEntry );
 			bundle.Entry.Add( reportEntry );
-
-			FhirModel4.Bundle boo;
 
 			var bundleResponse = fhirClient.Transaction( bundle );
 			foreach ( var bundleResponseEntry in bundleResponse.Entry )
@@ -288,7 +288,7 @@ namespace ExampleFhirClient
 			};
 		}
 
-		private static FhirModel4.DiagnosticReport CreateReport( DateTime reportDate )
+		private static FhirModel4.DiagnosticReport CreateReport( DateTimeOffset reportDate )
 		{
 			return new FhirModel4.DiagnosticReport
 			{
@@ -381,6 +381,5 @@ namespace ExampleFhirClient
 		private static readonly Uri FhirServer = new Uri( "https://fhir.careevolution.com/Master.Adapter1.WebClient/" );
 		private const string FhirIdSystem = "http://fhir.carevolution.com/identifiers/CareEvolution/MRN/FHIR";
 		
-		//private static readonly Uri FhirServer = new Uri( "https://test-consumers-release-24.x.careev-dev.com/WebClientTest.Adapter1.WebClient/" );
 	}
 }

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using Hl7.Fhir.Model;
 
 namespace ExampleFhirClient
 {
@@ -50,7 +49,7 @@ namespace ExampleFhirClient
 		
 		private static string CreateClientCredentialsJWT( X509Certificate2 signingCertificate, string clientId, string audience )
 		{
-			var creds = new X509SigningCredentials( signingCertificate );
+			var creds = new Microsoft.IdentityModel.Tokens.X509SigningCredentials( signingCertificate );
 			
 			var issued = DateTime.UtcNow;
 			var expires = issued.AddMinutes( 90 );
