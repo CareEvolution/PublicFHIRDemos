@@ -179,10 +179,12 @@
 					"Authorization": "Bearer " + $scope.accessToken
 				},
 				method: "GET",
-			}).success(function(data) {
+			}).then(function(response) {
 				$scope.fhirGetting = false;
-				$scope.fhirGetResult = JSON.stringify(data, null, 4);
-			}).error(function(data, status) {
+				$scope.fhirGetResult = JSON.stringify(response.data, null, 4);
+			}).catch(function(error) {
+				var data = error.data;
+				var status = error.status;
 				$scope.fhirGetting = false;
 				var getMessage = "Get '" + fhirUrl + "' failed";
 				if (data && data.issue && data.issue.length && data.issue[0].details) {
@@ -299,14 +301,16 @@
 			$http({
 				url: $scope.fhirUrl + "/metadata",
 				method: "GET",
-			}).success(function(data) {
-				var smartUrls = getSmartUrls(data);
+			}).then(function(response) {
+				var smartUrls = getSmartUrls(response.data);
 				if (!smartUrls) {
 					onError("The FHIR server conformance statement does not specify the SMART authorization and token URLs");
 				} else {
 					onSuccess(smartUrls);
 				}
-			}).error(function(data, status) {
+			}).catch(function(error) {
+				var data = error.data;
+				var status = error.status;
 				if (data && data.issue && data.issue.length > 0 && data.issue[0].details) {
 					onError("Get conformance failed: " + data.issue[0].details);
 				} else if (status === 0) {
@@ -363,13 +367,16 @@
 					return angular.isObject(data) && String(data) !== "[object File]" ? jQuery.param(data) : data;
 				}],
 				data: data
-			}).success(function(data) {
+			}).then(function(response) {
+				var data = response.data;
 				if (!data || !data.access_token) {
 					onError("Get access token failed: success but no access token in the response");
 				} else {
 					onSuccess(data);
 				}
-			}).error(function(data, status) {
+			}).catch(function(error) {
+				var data = error.data;
+				var status = error.status;
 				if (data && data.error_description) {
 					onError("Get access token failed: " + data.error_description);
 				} else if (status === 0) {
