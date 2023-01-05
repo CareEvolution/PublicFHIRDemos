@@ -45,6 +45,7 @@
 		var SESSION_ACCESS_TOKEN = "accessToken";
 		var SESSION_PATIENT_ID = "patientID";
 		var SESSION_REFRESH_TOKEN = "refreshToken";
+		var SESSION_RESPONSE_SCOPE = "responseScope";
 
         $scope.redirectUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
 
@@ -104,7 +105,7 @@
 			setSessionStorage(SESSION_CLIENT_SECRET, $scope.clientSecret);
 			setSessionStorage(SESSION_SCOPE, $scope.scope);
 			setSessionStorage(SESSION_LAUNCH, $scope.launch);
-			setAccessToken(null, null, null);
+			setAccessToken(null, null, null, null);
 			getFhirMetadata(
 				function(smartUrls) {
 					var redirectParameters = "";
@@ -131,6 +132,7 @@
 		$scope.accessToken = sessionStorage[SESSION_ACCESS_TOKEN] || null;
 		$scope.refreshToken = sessionStorage[SESSION_REFRESH_TOKEN] || null;
 		$scope.patientID = sessionStorage[SESSION_PATIENT_ID] || null;
+		$scope.responseScope = sessionStorage[SESSION_RESPONSE_SCOPE] || null;
 
 		$scope.refreshTokenMessage = null;
 		$scope.refreshingToken = false;
@@ -148,10 +150,15 @@
 				function(data) {
 					$scope.refreshingToken = false;
 					$scope.accessToken = data.access_token;
+					$scope.responseScope = data.scope;
 					setSessionStorage(SESSION_ACCESS_TOKEN, data.access_token);
 					if (data.refresh_token) {
 						$scope.refreshToken = data.refresh_token;
 						setSessionStorage(SESSION_REFRESH_TOKEN, data.refresh_token);
+					}
+					if (data.scope) {
+						$scope.responseScope = data.scope;
+						setSessionStorage(SESSION_RESPONSE_SCOPE, data.scope);
 					}
 				},
 				function(errorMessage) {
@@ -215,7 +222,7 @@
 						redirect_uri: $scope.redirectUrl,
 					},
 					function(data) {
-						setAccessToken(data.access_token, data.refresh_token, data.patient);
+						setAccessToken(data.access_token, data.refresh_token, data.patient, data.scope);
 						window.location = $scope.redirectUrl;
 					},
 					function(errorMessage) {
@@ -239,13 +246,15 @@
 			return null;
 		}
 
-		function setAccessToken(token, refreshToken, patientID) {
+		function setAccessToken(token, refreshToken, patientID, responseScope) {
 			$scope.accessToken = token;
 			setSessionStorage(SESSION_ACCESS_TOKEN, token);
 			$scope.refreshToken = refreshToken;
 			setSessionStorage(SESSION_REFRESH_TOKEN, refreshToken);
 			$scope.patientID = patientID;
 			setSessionStorage(SESSION_PATIENT_ID, patientID);
+			$scope.responseScope = responseScope;
+			setSessionStorage(SESSION_RESPONSE_SCOPE, responseScope);
 		}
 
 		function setSessionStorage(key, value) {
