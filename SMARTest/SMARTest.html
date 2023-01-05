@@ -100,7 +100,7 @@
         <form ng-show="accessToken">
             <h2>4. Test FHIR calls</h2>
             <div class="form-group">
-                <label for="fhirGetRelativeUrl">FHIR relative URL:</label>
+                <label for="fhirGetRelativeUrl">FHIR request URL (relative or absolute):</label>
                 <input type="text" class="form-control" id="fhirGetRelativeUrl" ng-model="fhirGetRelativeUrl">
             </div>
             <call-button label="'FHIR GET'" action="fhirGet" disabled="fhirGetDisabled" executing="fhirGetting" message="fhirGetMessage" failed="true"></call-button>

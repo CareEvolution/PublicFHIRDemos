@@ -178,7 +178,10 @@
 			$scope.fhirGetMessage = null;
 			$scope.fhirGetResult = null;
 			$scope.fhirGetting = true;
-			var fhirUrl = $scope.fhirUrl + "/" + $scope.fhirGetRelativeUrl;
+			var fhirUrl = $scope.fhirGetRelativeUrl;
+			if (!fhirUrl.startsWith("http:") && !fhirUrl.startsWith("https:")) {
+				fhirUrl = $scope.fhirUrl + "/" + fhirUrl;
+            }
 			$http({
 				url: fhirUrl,
 				headers: {
