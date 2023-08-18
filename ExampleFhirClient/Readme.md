@@ -6,7 +6,7 @@ Very Basic Simple Microsoft C# command line program to search, read and post inf
    
 This application is using a JWT token to request an OAuth 2.0 access token and client authentication. The application uses the jwt.careevolution.com certificate and expects the OAuth client configuration (id: JWTClientCredentials). The signing certificate is available here: https://fhir.careevolution.com/jwt.pfx with password == `jwt.careevolution.com`. In a real production environment you would provide your own signing certificate and provide CareEvolution its public key to configure an OAuth Client for your authorization and access token.
 
-For more authentication information: https://github.com/HL7/bulk-data/blob/master/spec/authorization/index.md#obtaining-an-access-token
+For more authentication information: https://hl7.org/fhir/uv/bulkdata/authorization/index.html
 
 ## Basic usage
 
