@@ -220,6 +220,7 @@
 			} else {
 				getAccessToken(
 					{
+						client_id: $scope.clientID,
 						grant_type: "authorization_code",
 						code: code,
 						redirect_uri: $scope.redirectUrl,
