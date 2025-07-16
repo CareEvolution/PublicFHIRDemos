@@ -46,6 +46,7 @@
 		var SESSION_PATIENT_ID = "patientID";
 		var SESSION_REFRESH_TOKEN = "refreshToken";
 		var SESSION_RESPONSE_SCOPE = "responseScope";
+		var SESSION_ID_TOKEN = "idToken";
 
         $scope.redirectUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
 
@@ -105,7 +106,7 @@
 			setSessionStorage(SESSION_CLIENT_SECRET, $scope.clientSecret);
 			setSessionStorage(SESSION_SCOPE, $scope.scope);
 			setSessionStorage(SESSION_LAUNCH, $scope.launch);
-			setAccessToken(null, null, null, null);
+			setAccessToken(null, null, null, null, null);
 			getFhirMetadata(
 				function(smartUrls) {
 					var redirectParameters = "";
@@ -133,6 +134,7 @@
 		$scope.refreshToken = sessionStorage[SESSION_REFRESH_TOKEN] || null;
 		$scope.patientID = sessionStorage[SESSION_PATIENT_ID] || null;
 		$scope.responseScope = sessionStorage[SESSION_RESPONSE_SCOPE] || null;
+		$scope.idToken = sessionStorage[SESSION_ID_TOKEN] || null;
 
 		$scope.refreshTokenMessage = null;
 		$scope.refreshingToken = false;
@@ -225,7 +227,7 @@
 						redirect_uri: $scope.redirectUrl,
 					},
 					function(data) {
-						setAccessToken(data.access_token, data.refresh_token, data.patient, data.scope);
+						setAccessToken(data.access_token, data.refresh_token, data.patient, data.scope, data.id_token);
 						window.location = $scope.redirectUrl;
 					},
 					function(errorMessage) {
@@ -249,7 +251,7 @@
 			return null;
 		}
 
-		function setAccessToken(token, refreshToken, patientID, responseScope) {
+		function setAccessToken(token, refreshToken, patientID, responseScope, idToken) {
 			$scope.accessToken = token;
 			setSessionStorage(SESSION_ACCESS_TOKEN, token);
 			$scope.refreshToken = refreshToken;
@@ -258,6 +260,8 @@
 			setSessionStorage(SESSION_PATIENT_ID, patientID);
 			$scope.responseScope = responseScope;
 			setSessionStorage(SESSION_RESPONSE_SCOPE, responseScope);
+			$scope.idToken = idToken;
+			setSessionStorage(SESSION_ID_TOKEN, idToken);
 		}
 
 		function setSessionStorage(key, value) {
