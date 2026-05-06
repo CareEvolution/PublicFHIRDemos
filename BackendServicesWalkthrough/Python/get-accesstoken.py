@@ -7,6 +7,7 @@ import time
 import uuid
 from pathlib import Path
 
+from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
@@ -17,10 +18,22 @@ def base64url_encode(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
 
 
+def get_certificate_path(private_key_path: str) -> Path:
+    return Path(private_key_path).with_name("certificate.pem")
+
+
+def get_certificate_kid(private_key_path: str) -> str:
+    cert_bytes = get_certificate_path(private_key_path).read_bytes()
+    cert = x509.load_pem_x509_certificate(cert_bytes)
+    fingerprint = cert.fingerprint(hashes.SHA1())
+    return fingerprint.hex().upper()
+
+
 def build_client_assertion(client_id: str, token_url: str, private_key_path: str) -> str:
     pem_content = Path(private_key_path).read_bytes()
 
     private_key = serialization.load_pem_private_key(pem_content, password=None)
+    kid_thumbprint = get_certificate_kid(private_key_path)
 
     now = int(time.time())
     payload = {
@@ -30,7 +43,7 @@ def build_client_assertion(client_id: str, token_url: str, private_key_path: str
         "jti": str(uuid.uuid4()),
         "exp": now + 300,
     }
-    header = {"alg": "RS384", "typ": "JWT"}
+    header = {"alg": "RS384", "typ": "JWT", "kid": kid_thumbprint}
 
     header_segment = base64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
     payload_segment = base64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
@@ -66,6 +79,7 @@ def main() -> int:
 
     if args.verbose:
         print(f"Loading private key from {args.private_key_path}", file=sys.stderr)
+        print(f"Loading certificate from {get_certificate_path(args.private_key_path)}", file=sys.stderr)
 
     try:
         client_assertion = build_client_assertion(args.client_id, token_url, args.private_key_path)
@@ -94,7 +108,13 @@ def main() -> int:
         )
         return 1
     except FileNotFoundError:
-        print(f"Private key file not found: {args.private_key_path}", file=sys.stderr)
+        print(
+            (
+                "Private key or certificate file not found. Expected private key at "
+                f"{args.private_key_path} and certificate at {get_certificate_path(args.private_key_path)}"
+            ),
+            file=sys.stderr,
+        )
         return 1
     except Exception as error:
         print(f"Authentication failed: {error}", file=sys.stderr)

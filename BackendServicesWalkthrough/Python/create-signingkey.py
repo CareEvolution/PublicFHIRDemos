@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 import argparse
-import base64
+import datetime
 import sys
-import textwrap
 from pathlib import Path
 
-from cryptography.hazmat.primitives import serialization
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-def pem_block(label: str, content: bytes) -> str:
-    encoded = base64.b64encode(content).decode("ascii")
-    wrapped = "\n".join(textwrap.wrap(encoded, 64))
-    return f"-----BEGIN {label}-----\n{wrapped}\n-----END {label}-----"
+
+def get_certificate_path(private_key_path: str) -> Path:
+    return Path(private_key_path).with_name("certificate.pem")
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate an RSA signing key for the quickstart flow.")
@@ -21,19 +22,29 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    certificate_path = get_certificate_path(args.private_key_path)
 
     print(f"Generating {args.key_size}-bit RSA key pair...")
     private_key = rsa.generate_private_key(public_exponent=65537, key_size=args.key_size)
     public_key = private_key.public_key()
 
-    public_key_bytes = public_key.public_bytes(
-        encoding=serialization.Encoding.DER,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    subject = issuer = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, u"SMART App Quickstart"),])   
+    now = datetime.datetime.now(datetime.timezone.utc)
+    cert = (
+        x509.CertificateBuilder()
+        .subject_name(subject)
+        .issuer_name(issuer)
+        .public_key(public_key)
+        .serial_number(x509.random_serial_number())
+        .not_valid_before(now)
+        .not_valid_after(now + datetime.timedelta(days=365))
+        .sign(private_key, hashes.SHA256())
     )
-    public_key_pem = pem_block("PUBLIC KEY", public_key_bytes)
-    print("\n--- PUBLIC KEY (X.509 PEM) ---")
-    print(public_key_pem)
-    print("----------------------------------")
+
+    cert_pem = cert.public_bytes(serialization.Encoding.PEM)
+    certificate_path.write_bytes(cert_pem)
+
+    print(cert_pem.decode("ascii"))
 
     private_key_bytes = private_key.private_bytes(
         encoding=serialization.Encoding.PEM,
