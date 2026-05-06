@@ -41,6 +41,7 @@ def build_client_assertion(client_id: str, token_url: str, private_key_path: str
         "sub": client_id,
         "aud": token_url,
         "jti": str(uuid.uuid4()),
+        "iat": now,
         "exp": now + 300,
     }
     header = {"alg": "RS384", "typ": "JWT", "kid": kid_thumbprint}
